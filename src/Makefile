@@ -2,6 +2,7 @@ all: main
 
 main: main.o Box.o Ecoli.o
 	g++ -g -O4 -o main main.o Ecoli.o Box.o --std=c++11
+	mv main ../main
 
 main.o: main.cpp
 	g++ -g -O4 -c -o main.o main.cpp --std=c++11

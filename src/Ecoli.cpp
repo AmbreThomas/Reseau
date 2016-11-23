@@ -11,7 +11,7 @@ double Ecoli::RAB_ = 0.1;
 double Ecoli::RBB_ = 0.1;
 double Ecoli::RBC_ = 0.1;
 double Ecoli::Pmut_ = 0.00;
-double Ecoli::Pdeath_ = 1;
+double Ecoli::Pdeath_ = 0.02;
   
 //=========================== Constructors =============================
 
