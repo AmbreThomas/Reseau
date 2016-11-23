@@ -12,7 +12,6 @@ import signal
 import sys
 import time
 
-
 #traiter l'arrêt
 def signal_handler_stop(signal, frame):
     global WorkingServ
@@ -26,41 +25,58 @@ def signal_handler_stop(signal, frame):
 
 #gérer la relation client
 def handlerCLI(clientsock,sema,poolCLI,poolSUB):
+    #prendre en compte absence de sub...
+
     #on est connecté avec client
-    #on a la liste des socket des sous-traitants dispo au moment de l'appel dans poolSUB
+    #on a la liste des socket des sous-traitants (dispo au moment OU probablement global ?) de l'appel dans poolSUB
     #si trop dans le pool envoyer un message NON et d'attendre ou de réessayer
     #sinon envoyer un message OUI
-
+    
     ##ICI PREMIER CONTACT AVEC CLIENT
     if poolCLI.getsize() > self.nbcli :
         #refuser, dire qu'ils vont devoir attendre.
-
+        clientsock.send("Connexion accepted. Please wait, your request will be processed when we are over with our current clients.")
     else :
-        #dire que la connection est acceptés
+        clientsock.send("Connexion accepted.")
 
     with sema:
-        #on peut pas join sur tout poolSUB parce qu'il aura peut etre changé -> faire une copie maintenant.
+        #on peut pas join sur tout poolSUB parce qu'il aura peut etre changé ? (DEPEND SI GLOBAL... )-> faire une copie maintenant.
         poolCLI.makeActive(clientsock) 
-        #envoyer message indiquant qu'on commence la relation.
-
-        #réceptionner le fichier contenant les informations à savoir
-
-        #confirmer réception et dire cb de machies travaillent sur le sujet
-
+        clientsock.send("Send your request")
+        recept = True
+        while recept :
+            clientsock.rcv()
+        #ArgsClI = arguments (espacés)
         
+        clientsock.send("Request accepted. "+str(poolCLI.getsize())+" subcontractors are taking care of it")
         #on veut pouvoir arrêter tous les thread proprement si ctr+c, puis arrive à a fin de thread, et le fermer ainsi proprement.
-        while WorkingComp :
+        
+        Request = self.makeRequest(ArgsCLI) #on espère qu'on aura pas de déco sauvage de subcontracteur...
+        missingParts = True
+        while missingParts :
+            readable, writable, errored = select.select(poolSUB.active,[],[])
+            for i,sockSUB in enumerate(readable) :
+                #vérifier qu'un sub ne s'est pas déco, etc.
+
+
             #peut-être hériter de socket pour avoir un système ou on a un lock dessus ? 
             #idee : envoyer une demande aux sous-traitants pour une nouvelle connexion ? 
         
-            #ici créer de nouveaux threads pour gérer les connexions mutliples avec les sous-traitants (degré 2)
-        
-        pool.makeInactive(clientsock)
-        #fermer la socket du client pour libérer sema
 
+        
+    poolCLI.makeInactive(clientsock)
+    sema.release()
 #gérer la relation subcontractors
 def handlerSUB(subsock,poolCLI,poolSUB) :
-    print('nouveau client...')    
+    print('New subcontractor...')
+    poolSUB.makeActive(subsock)
+    subsock.send("Connexion accepted.")
+
+    while WorkingComp :
+        pass
+
+    poolSUB.makeInactive(subsock)
+
 
 
 #sauvegarde de socket et suivi de leur activité.
@@ -68,21 +84,32 @@ class ActivePool(object):
     def __init__(self):
         super(ActivePool, self).__init__()
         self.active = []
+        self.activeID = {}
         self.size = 0
+        self.x = 0
         self.lock = threading.Lock() #pour ne pas avoir d'accès simultané à l'objet
     def makeActive(self, name):
         with self.lock:
             self.active.append(name)
+            self.activeID[name] = self.x
+            self.x+=1
             self.size+=1
     def makeInactive(self, name):
         with self.lock:
+            del self.activeID[name]
             self.active.remove(name)
             self.size-=1
+            name.shutdown(1)
+            name.close()
     def __str__(self):
         with self.lock:
             return(str(self.active))
     def getsize(self):
         return(self.size))
+    def close(self) :
+        for so in self.active :
+            so.shutdown(1)
+            so.close()
 
 class Serveur(object) :
     def __init__(self):
@@ -91,7 +118,6 @@ class Serveur(object) :
         self.port2 = sys.argv[2]
         self.nbcli = sys.argv[3]
         #self.TAILLE_BLOC=1024
-        self.listeClients
 
         ## gestion de l'arrêt
         global WorkingServ
@@ -99,7 +125,7 @@ class Serveur(object) :
         global WorkingComp
         WorkingComp = True
 
-        ## gestion des connections (multiples)
+        ## gestion des connexions (multiples)
         AllThreadCLI = []
         AllThreadSUB = []
         poolCLI = ActivePool() #les déclarer global peut-etre et mettre global dans les handler ????????
@@ -122,7 +148,8 @@ class Serveur(object) :
             for sock in readable : 
                 if sock is sockCLI :
                     clientsock, addr = sock.accept() 
-                    print('A Client is conneted : %s:%d' % addr)
+                    sema.acquire()
+                    print('A Client is connected : %s:%d' % addr)
                     t = threading.Thread(target=handlerCLI, args=(clientsock,sema,poolCLI,poolSUB))
                     AllThreadCLI.append(t)
                     t.start()
@@ -138,15 +165,22 @@ class Serveur(object) :
                     print(poolSUB)
             #enlever les thread obsoletes, etc.
 
-        print('Ctrl+c pressed : no more client accepted')
-
+        print('Ctrl+c pressed : no more client and subcontracctors accepted')
+        
         #les thread tournent encore.
         #join sur tous les thread qui devraient s'arrêter (puis fermeture de thread ?? pas la peine car fin du script )
         #(différent de fermeture de socket qui se fait dans thread)
-        for t in allThread :
+        for t in allThreadCLI :
             t.join()
-        #soit terminés naturellement, soit avec Ctrl-Break
+        WorkingComp = False
+        for t in allThreadSUB :
+            t.join()
         print('All operations over')
+
+    def makeRequest(ArgsCLI, poolS) :
+        Request = ""
+
+        return(Request)
 
 ## main
 if __name__=="__main__":
@@ -156,4 +190,4 @@ if __name__=="__main__":
         sys.exit(-1)
     signal.signal(signal.SIGINT, signal_handler) #1er CTRL+C gère arrêt écoute, 2e gère arrêt clients.
     Serveur()
-    
+##6666, 7777
