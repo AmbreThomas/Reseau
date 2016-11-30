@@ -70,6 +70,7 @@ void run(int W, int H, double D, double Azero, int T, size_t iterMax, size_t pho
   
   int success = EXIT_SUCCESS;
   Box Petri = Box(W,H,D,Azero);
+    
   size_t iter = 1;
     
   while (Petri.isAlive() and iter<iterMax and not Petri.isFixed()){
@@ -112,7 +113,6 @@ void run(int W, int H, double D, double Azero, int T, size_t iterMax, size_t pho
   cout << endl;
   
   success += system("Rscript Analyse.R");
-  success += system("atril -w Rplots.pdf");
   success += system("evince -w Rplots.pdf");
   
   if (photo>0){

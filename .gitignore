@@ -1,0 +1,5 @@
+Rplots.pdf
+*.txt
+*.ppm
+*.gif
+src/*.o
