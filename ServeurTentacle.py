@@ -27,11 +27,6 @@ def signal_handler_stop(signal, frame):
 def handlerCLI(clientsock,sema,poolCLI,poolSUB):
     #prendre en compte absence de sub...
 
-    #on est connecté avec client
-    #on a la liste des socket des sous-traitants (dispo au moment OU probablement global ?) de l'appel dans poolSUB
-    #si trop dans le pool envoyer un message NON et d'attendre ou de réessayer
-    #sinon envoyer un message OUI
-    
     ##ICI PREMIER CONTACT AVEC CLIENT
     if poolCLI.getsize() > self.nbcli :
         #refuser, dire qu'ils vont devoir attendre.
@@ -45,27 +40,43 @@ def handlerCLI(clientsock,sema,poolCLI,poolSUB):
         clientsock.send("Send your request")
         recept = True
         while recept :
-            clientsock.rcv()
+            ArgsClI = clientsock.rcv(1024)
         #ArgsClI = arguments (espacés)
         
-        clientsock.send("Request accepted. "+str(poolCLI.getsize())+" subcontractors are taking care of it")
-        #on veut pouvoir arrêter tous les thread proprement si ctr+c, puis arrive à a fin de thread, et le fermer ainsi proprement.
-        
-        Request = self.makeRequest(ArgsCLI) #on espère qu'on aura pas de déco sauvage de subcontracteur...
+        clientsock.send("Request accepted. "+str(poolCLI.getsize())+" subcontractors are taking care of it")        
+        Request, fraction = self.makeRequest(ArgsCLI) #on espère qu'on aura pas de déco sauvage de subcontracteur...
+        #fraction : nombre de sous partie du problème !
         missingParts = True
+        parts = 0
         while missingParts :
             readable, writable, errored = select.select(poolSUB.active,[],[])
             for i,sockSUB in enumerate(readable) :
                 #vérifier qu'un sub ne s'est pas déco, etc.
+                with poolSUB.activelock[sockSUB] :
+                    idmission = 
+                    #recevoir l'identifiant de la mission : si c'est le bon alors on enregistre, sinon
+                    if idmission != poolCLI.activeID[clientsock] :
+                        
+                        badCliId = True
+                    else :
+                        #recevoir l'identifiant de la partie
+                        idpartie = 
 
+                        #ENREGISTRER LA PARTIE DU RESULTAT
+                        resultat[idpartie] = clientsock.rcv(1024) #CHANGER CA
 
-            #peut-être hériter de socket pour avoir un système ou on a un lock dessus ? 
-            #idee : envoyer une demande aux sous-traitants pour une nouvelle connexion ? 
-        
-
+                        parts+=1
+                        if parts == fraction :
+                            missingParts = False
+                            resultat = self.assemble(resultat)
+                            break
+                if badCliId :
+                    time.sleep(1) #laisse 1s à autre thread pour voir si la mission était à lui !
         
     poolCLI.makeInactive(clientsock)
     sema.release()
+
+
 #gérer la relation subcontractors
 def handlerSUB(subsock,poolCLI,poolSUB) :
     print('New subcontractor...')
@@ -74,17 +85,18 @@ def handlerSUB(subsock,poolCLI,poolSUB) :
 
     while WorkingComp :
         pass
-
+    #leur envoyer un message a l'arret du travail ! 
+    subsock.send('STOP')
     poolSUB.makeInactive(subsock)
 
-
-
 #sauvegarde de socket et suivi de leur activité.
+#name désigne la socket
 class ActivePool(object):
     def __init__(self):
         super(ActivePool, self).__init__()
         self.active = []
         self.activeID = {}
+        self.activelock = {}
         self.size = 0
         self.x = 0
         self.lock = threading.Lock() #pour ne pas avoir d'accès simultané à l'objet
@@ -92,11 +104,13 @@ class ActivePool(object):
         with self.lock:
             self.active.append(name)
             self.activeID[name] = self.x
+            self.activelock[name] = threading.Lock()
             self.x+=1
             self.size+=1
     def makeInactive(self, name):
         with self.lock:
             del self.activeID[name]
+            del self.activelock[name]
             self.active.remove(name)
             self.size-=1
             name.shutdown(1)
@@ -179,7 +193,6 @@ class Serveur(object) :
 
     def makeRequest(ArgsCLI, poolS) :
         Request = ""
-
         return(Request)
 
 ## main
