@@ -11,7 +11,7 @@ import select
 def ParamRequest(value, fen):
     fen.destroy()
     fenetre2 = Tk()
-    frame = Frame(fenetre2, bg='purple', borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
+    frame = Frame(fenetre2, borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
     Label(frame, text = "Merci de rentrer les paramètres de la simulation").pack()
     valueLargeur = StringVar() 
     valueLargeur.set(32)
@@ -21,9 +21,8 @@ def ParamRequest(value, fen):
     EntryHauteur = Entry(frame, textvariable=valueHauteur, width=30).pack()
     Label(frame, text = "Largeur de la boîte").pack()
     EntryLargeur = Entry(frame, textvariable=valueLargeur, width=30).pack()
-    params = ""
-    params += str(value)+" "+valueLargeur.get()+" "+valueHauteur.get()+" "
     if value == 1:
+            fenetre2.title("Realiser une simulation")
             valueD = StringVar()
             valueD.set(0.1)
             valueA0 = StringVar() 
@@ -40,9 +39,10 @@ def ParamRequest(value, fen):
             EntryT = Entry(frame, textvariable=valueT, width=30).pack()
             Label(frame, text = "Durée de l'expérience").pack()
             EntryiterMax = Entry(frame, textvariable=valueiterMax, width=30).pack()
-            Button(fenetre2, text="Valider", command=lambda: requestIP(str(value)+" "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get(), fenetre2)).pack(side = LEFT)
+            Button(fenetre2, text="Valider", command=lambda: requestIP("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get(), fenetre2)).pack(side = LEFT)
             Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
     elif value == 2:
+            fenetre2.title("Exploration parametrique (T et A0)")
             valueD = StringVar() 
             valueD.set(0.1)
             valueA0 = StringVar() 
@@ -57,11 +57,10 @@ def ParamRequest(value, fen):
             EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
             Label(frame, text = "Intervalle de temps entre les repiquages à tester").pack()
             EntryT = Entry(frame, textvariable=valueT, width=30).pack()
-            Label(frame, text = "Zone ?").pack()
-            Entryzone = Entry(frame, textvariable=valuezone, width=30).pack()
-            Button(fenetre2, text="Valider", command=lambda: requestIP(str(value)+" "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valuezone.get(), fenetre2)).pack(side = LEFT)
+            Button(fenetre2, text="Valider", command=lambda: requestIP("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get(), fenetre2)).pack(side = LEFT)
             Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
     elif value == 3:
+            fenetre2.title("Exploration parametrique (T, A0 et Dmax)")
             valueDmax = StringVar() 
             valueDmax.set(1)
             valueDstep = StringVar() 
@@ -82,14 +81,15 @@ def ParamRequest(value, fen):
             EntryT = Entry(frame, textvariable=valueT, width=30).pack()
             Label(frame, text = "Nombres d'essais à réaliser").pack()
             EntryNessai = Entry(frame, textvariable=valueNessai, width=30).pack()
-            Button(fenetre2, text="Valider", command=lambda: requestIP(str(value)+" "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueNessai.get(), fenetre2)).pack(side = LEFT)
+            Button(fenetre2, text="Valider", command=lambda: requestIP("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueNessai.get(), fenetre2)).pack(side = LEFT)
             Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
     return;
 
 def requestIP(params, fenetre2):
     fenetre2.destroy()
     fenetre3 = Tk()
-    frame = Frame(fenetre3, bg='purple', borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
+    fenetre3.title('')
+    frame = Frame(fenetre3, borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
     Label(frame, text = "Merci de rentrer votre adresse IP").pack()
     valueIP = StringVar() 
     valueIP.set("000")
@@ -98,7 +98,26 @@ def requestIP(params, fenetre2):
     Button(fenetre3, text="Fermer", command=fenetre3.destroy).pack(side = RIGHT)
     return;
 
+def signal_handler(signal, frame):
+    print 'You pressed Ctrl+C !'
+
 def envoyer(params, ip):    
+    stopLoop = True
+    signal.signal(signal.SIGINT, signal_handler)
+    print 'Press Ctrl+C pour arreter le client'
+    params = params + " " + str(ip)
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, 6666))
+        s.send(params)
+        print s.rcv(255)
+    except socket.error, e:
+        print "erreur dans l'appel a une methode de la classe socket : %s"%e
+        sys.exit(1)
+    finally:
+        s.shutdown(1)
+        s.close()
+    print "fin"
     #largeur, hauteur (W,H) (32 par défaut)
     #A0 : concentration initiale en glucose [0,50]
     #resolA : pas sur A
@@ -110,19 +129,19 @@ def envoyer(params, ip):
     #1 : ./main run W H D A0 T iterMax photo
     #2 : ./main all W H D resolT resolA zone
     #3 : ./main explore3D W H resolT resolA Dmax Dstep Nessais
-    
     return;
 
 def main():
     fenetre = Tk()
-    f1 = Frame(fenetre, bg='purple', borderwidth=2, relief=GROOVE)
+    f1 = Frame(fenetre, borderwidth=2, relief=GROOVE)
     f1.pack(padx=1, pady=1)
+    fenetre.title('')
     label = Label(f1, text = "Merci de choisir la requête à envoyer").pack()
     valueRequest = IntVar() 
     valueRequest.set(1)
-    bouton1 = Radiobutton(fenetre, text="Requête 1", variable=valueRequest, value=1).pack()
-    bouton2 = Radiobutton(fenetre, text="Requête 2", variable=valueRequest, value=2).pack()
-    bouton3 = Radiobutton(fenetre, text="Requête 3", variable=valueRequest, value=3).pack()
+    Radiobutton(fenetre, text="Realiser une simulation", variable=valueRequest, value=1).pack(anchor=W)
+    Radiobutton(fenetre, text="Exploration parametrique (T et A0)", variable=valueRequest, value=2).pack(anchor=W)
+    Radiobutton(fenetre, text="Exploration parametrique (T, A0 et Dmax)", variable=valueRequest, value=3).pack(anchor=W)
     Button(fenetre, text="Valider", command=lambda: ParamRequest(valueRequest.get(), fenetre)).pack(side = LEFT)
     Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
     fenetre.mainloop()
