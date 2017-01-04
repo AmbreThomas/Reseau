@@ -72,7 +72,14 @@ void run(int W, int H, double D, double Azero, int T, size_t iterMax, size_t pho
   Box Petri = Box(W,H,D,Azero);
     
   size_t iter = 1;
-    
+  cout << "W: " << W << endl;
+  cout << "H: " << H << endl;
+  cout << "D: " << D << endl;
+  cout << "A0: " << Azero << endl;
+  cout << "T: " << T << endl;
+  cout << "itermax: " << iterMax << endl;
+  cout << "photo: " << photo << endl;
+  
   while (Petri.isAlive() and iter<iterMax and not Petri.isFixed()){
     if (iter > 0 and iter%T==0){
       Petri.renew(Azero);

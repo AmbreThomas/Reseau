@@ -2,12 +2,16 @@ from socket import *
 from sys import argv
 import threading
 from os import system
+from time import sleep
 
 tentacle_ip = argv[1]
 
 s = socket(AF_INET, SOCK_STREAM)
+s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+
 print "Disponible..."
 s.connect( (tentacle_ip, 7777) )
+print s.recv(1024)
 
 threads = []
 
@@ -16,6 +20,7 @@ def proceed(s,received):
 	args = " ".split(received)
 	
 	#system("")
+	sleep(10)
 	result = "2"
 	s.sendall(result)
 	print "One job completed."
