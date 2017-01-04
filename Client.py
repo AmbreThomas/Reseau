@@ -39,7 +39,7 @@ def ParamRequest(value, fen):
             EntryT = Entry(frame, textvariable=valueT, width=30).pack()
             Label(frame, text = "Durée de l'expérience").pack()
             EntryiterMax = Entry(frame, textvariable=valueiterMax, width=30).pack()
-            Button(fenetre2, text="Valider", command=lambda: requestIP("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get(), fenetre2)).pack(side = LEFT)
+            Button(fenetre2, text="Valider", command=lambda: envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get(), fenetre2)).pack(side = LEFT)
             Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
     elif value == 2:
             fenetre2.title("Exploration parametrique (T et A0)")
@@ -57,7 +57,7 @@ def ParamRequest(value, fen):
             EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
             Label(frame, text = "Intervalle de temps entre les repiquages à tester").pack()
             EntryT = Entry(frame, textvariable=valueT, width=30).pack()
-            Button(fenetre2, text="Valider", command=lambda: requestIP("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get(), fenetre2)).pack(side = LEFT)
+            Button(fenetre2, text="Valider", command=lambda: envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get(), fenetre2)).pack(side = LEFT)
             Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
     elif value == 3:
             fenetre2.title("Exploration parametrique (T, A0 et Dmax)")
@@ -81,10 +81,10 @@ def ParamRequest(value, fen):
             EntryT = Entry(frame, textvariable=valueT, width=30).pack()
             Label(frame, text = "Nombres d'essais à réaliser").pack()
             EntryNessai = Entry(frame, textvariable=valueNessai, width=30).pack()
-            Button(fenetre2, text="Valider", command=lambda: requestIP("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueNessai.get(), fenetre2)).pack(side = LEFT)
+            Button(fenetre2, text="Valider", command=lambda: envoyer("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueNessai.get(), fenetre2)).pack(side = LEFT)
             Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
     return;
-
+"""
 def requestIP(params, fenetre2):
     fenetre2.destroy()
     fenetre3 = Tk()
@@ -97,20 +97,22 @@ def requestIP(params, fenetre2):
     Button(fenetre3, text="Valider", command=lambda: envoyer(params, valueIP.get())).pack(side = LEFT)
     Button(fenetre3, text="Fermer", command=fenetre3.destroy).pack(side = RIGHT)
     return;
-
+"""
 def signal_handler(signal, frame):
     print 'You pressed Ctrl+C !'
 
-def envoyer(params, ip):    
-    stopLoop = True
+def envoyer(params, fenetre):
+    fenetre.destroy()    
     signal.signal(signal.SIGINT, signal_handler)
     print 'Press Ctrl+C pour arreter le client'
-    params = params + " " + str(ip)
+    params = params
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, 6666))
-        s.send(params)
-        print s.rcv(255)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect(("134.214.159.33", 6666))
+        print s.recv(255)
+        s.sendall(params)
+        print s.recv(255)
     except socket.error, e:
         print "erreur dans l'appel a une methode de la classe socket : %s"%e
         sys.exit(1)
@@ -118,22 +120,11 @@ def envoyer(params, ip):
         s.shutdown(1)
         s.close()
     print "fin"
-    #largeur, hauteur (W,H) (32 par défaut)
-    #A0 : concentration initiale en glucose [0,50]
-    #resolA : pas sur A
-    #T : temps avant repiquage [1,1500]
-    #resolT : pas sur T
-    #Nessais : nombre d'essais pour faire une moyenne
-    #D : coef de diffusion des substrats dans le milieu (0.1)
-    #photo : imprimer image de la boite ou pas ?
-    #1 : ./main run W H D A0 T iterMax photo
-    #2 : ./main all W H D resolT resolA zone
-    #3 : ./main explore3D W H resolT resolA Dmax Dstep Nessais
     return;
 
 def main():
     fenetre = Tk()
-    f1 = Frame(fenetre, borderwidth=2, relief=GROOVE)
+    f1 = Frame(fenetre, bg='purple', borderwidth=2, relief=GROOVE)
     f1.pack(padx=1, pady=1)
     fenetre.title('')
     label = Label(f1, text = "Merci de choisir la requête à envoyer").pack()
