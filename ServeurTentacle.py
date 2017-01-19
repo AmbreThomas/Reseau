@@ -16,7 +16,7 @@ import time
 def signal_handler_stop(signal, frame):
     global WorkingServ
     global WorkingComp
-    if (!WorkingServ) & WorkingComp :
+    if (not WorkingServ) & WorkingComp :
         print('The subcontractors stop working (Ctrl+C)')
         WorkingComp = False #pour arrêt des thread. #essayer exemple minimal...
     if WorkingServ :
@@ -30,9 +30,9 @@ def handlerCLI(clientsock,sema,poolCLI,poolSUB):
     ##ICI PREMIER CONTACT AVEC CLIENT
     if poolCLI.getsize() > self.nbcli :
         #refuser, dire qu'ils vont devoir attendre.
-        clientsock.send("Connexion accepted. Please wait, your request will be processed when we are over with our current clients.")
+        clientsock.send("Connection accepted. Please wait, your request will be processed when we are over with our current clients.")
     else :
-        clientsock.send("Connexion accepted.")
+        clientsock.send("Connection accepted.")
 
     with sema:
         #on peut pas join sur tout poolSUB parce qu'il aura peut etre changé ? (DEPEND SI GLOBAL... )-> faire une copie maintenant.
@@ -43,7 +43,7 @@ def handlerCLI(clientsock,sema,poolCLI,poolSUB):
             ArgsClI = clientsock.rcv(1024)
         #ArgsClI = arguments (espacés)
         
-        clientsock.send("Request accepted. "+str(poolCLI.getsize())+" subcontractors are taking care of it")        
+        clientsock.send("Request accepted. "+str(poolSUB.getsize())+" subcontractors are taking care of it")        
         Request, fraction = self.makeRequest(ArgsCLI) #on espère qu'on aura pas de déco sauvage de subcontracteur...
         #fraction : nombre de sous partie du problème !
         missingParts = True
@@ -55,9 +55,8 @@ def handlerCLI(clientsock,sema,poolCLI,poolSUB):
                 with poolSUB.activelock[sockSUB] :
                     idmission = 
                     #recevoir l'identifiant de la mission : si c'est le bon alors on enregistre, sinon
-                    if idmission != poolCLI.activeID[clientsock] :
-                        
-                        badCliId = True
+                    if idmission != poolCLI.activeID[clientsock] :    
+                        time.sleep(1) #laisse 1s à autre thread pour voir si la mission était à lui !
                     else :
                         #recevoir l'identifiant de la partie
                         idpartie = 
@@ -70,8 +69,7 @@ def handlerCLI(clientsock,sema,poolCLI,poolSUB):
                             missingParts = False
                             resultat = self.assemble(resultat)
                             break
-                if badCliId :
-                    time.sleep(1) #laisse 1s à autre thread pour voir si la mission était à lui !
+                    
         
     poolCLI.makeInactive(clientsock)
     sema.release()
@@ -81,8 +79,7 @@ def handlerCLI(clientsock,sema,poolCLI,poolSUB):
 def handlerSUB(subsock,poolCLI,poolSUB) :
     print('New subcontractor...')
     poolSUB.makeActive(subsock)
-    subsock.send("Connexion accepted.")
-
+    subsock.send("Connection accepted.")
     while WorkingComp :
         pass
     #leur envoyer un message a l'arret du travail ! 
@@ -204,3 +201,4 @@ if __name__=="__main__":
     signal.signal(signal.SIGINT, signal_handler) #1er CTRL+C gère arrêt écoute, 2e gère arrêt clients.
     Serveur()
 ##6666, 7777
+
