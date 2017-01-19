@@ -3,8 +3,10 @@ from Tkinter import *
 from tkMessageBox import *
 import sys
 import socket
+import os
 import string
 import signal
+from PIL import Image, ImageTk
 import time
 import select
 
@@ -104,8 +106,10 @@ def signal_handler(signal, frame):
 def envoyer(params, fenetre):
     fenetre.destroy()    
     signal.signal(signal.SIGINT, signal_handler)
+    print len(params)
     print 'Press Ctrl+C pour arreter le client'
     params = params
+    recevoir(params)
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -122,10 +126,21 @@ def envoyer(params, fenetre):
     print "fin"
     return;
 
+def recevoir(truc):
+    fenetre = Tk()
+    path = os.getcwd()
+    fenetre.title('Résultats')
+    monimage = Image.open('/'+truc) 
+    photo = ImageTk.PhotoImage(monimage)
+    lab = Label(image = photo)
+    lab.image=photo
+    lab.pack()
+    Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
+    fenetre.mainloop()
+
 def main():
     fenetre = Tk()
-    f1 = Frame(fenetre, bg='purple', borderwidth=2, relief=GROOVE)
-    f1.pack(padx=1, pady=1)
+    f1 = Frame(fenetre, bg='purple', borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
     fenetre.title('')
     label = Label(f1, text = "Merci de choisir la requête à envoyer").pack()
     valueRequest = IntVar() 
