@@ -59,7 +59,7 @@ def handlerCLI(clientsock,sema,poolCLI,poolSUB):
                         time.sleep(1) #laisse 1s à autre thread pour voir si la mission était à lui !
                     else :
                         #recevoir l'identifiant de la partie
-                        idpartie = 
+                        idpartie =
 
                         #ENREGISTRER LA PARTIE DU RESULTAT
                         resultat[idpartie] = clientsock.rcv(1024) #CHANGER CA
@@ -69,8 +69,8 @@ def handlerCLI(clientsock,sema,poolCLI,poolSUB):
                             missingParts = False
                             resultat = self.assemble(resultat)
                             break
-                    
-        
+                if badCliId :
+                    time.sleep(1) #laisse 1s à autre thread pour voir si la mission était à lui !
     poolCLI.makeInactive(clientsock)
     sema.release()
 
@@ -82,7 +82,7 @@ def handlerSUB(subsock,poolCLI,poolSUB) :
     subsock.send("Connection accepted.")
     while WorkingComp :
         pass
-    #leur envoyer un message a l'arret du travail ! 
+    #leur envoyer un message a l'arret du travail !
     subsock.send('STOP')
     poolSUB.makeInactive(subsock)
 
@@ -140,7 +140,7 @@ class Serveur(object) :
         AllThreadCLI = []
         AllThreadSUB = []
         poolCLI = ActivePool() #les déclarer global peut-etre et mettre global dans les handler ????????
-        poolSUB = ActivePool() 
+        poolSUB = ActivePool()
         sema = BoundedSemaphore(value=self.nbcli)
 
         sockCLI = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -156,9 +156,9 @@ class Serveur(object) :
         waiting_list = [socketCLI, socketSUB]
         while WorkingServ :
             readable, writable, errored = select.select(waiting_list,[],[]) #wait for a potential connection
-            for sock in readable : 
+            for sock in readable :
                 if sock is sockCLI :
-                    clientsock, addr = sock.accept() 
+                    clientsock, addr = sock.accept()
                     sema.acquire()
                     print('A Client is connected : %s:%d' % addr)
                     t = threading.Thread(target=handlerCLI, args=(clientsock,sema,poolCLI,poolSUB))
@@ -177,7 +177,7 @@ class Serveur(object) :
             #enlever les thread obsoletes, etc.
 
         print('Ctrl+c pressed : no more client and subcontracctors accepted')
-        
+
         #les thread tournent encore.
         #join sur tous les thread qui devraient s'arrêter (puis fermeture de thread ?? pas la peine car fin du script )
         #(différent de fermeture de socket qui se fait dans thread)

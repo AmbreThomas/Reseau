@@ -1,5 +1,3 @@
-rm(list=ls())
-
 meanAinA = read.table("mean-A-in-A.txt")$V1
 meanBinA = read.table("mean-B-in-A.txt")$V1
 meanCinA = read.table("mean-C-in-A.txt")$V1

@@ -1,4 +1,7 @@
-Rplots.pdf
+*main
+*.Rhistory
+*.Rdata
+*Rplots.pdf
 *.txt
 *.ppm
 *.gif
