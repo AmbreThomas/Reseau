@@ -4,7 +4,7 @@ import threading
 from os import system
 from time import sleep
 
-tentacle_ip = "127.0.0.1"
+tentacle_ip = "192.168.0.46"
 
 s = socket(AF_INET, SOCK_STREAM)
 s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
@@ -40,7 +40,10 @@ def send_file(filename, max_size):
 			s.sendall(line[:-1])
 		else:
 			s.sendall(line)
-	s.sendall("fin.")
+	endstring = "fin."
+	while len(endstring)<max_size:
+		endstring = endstring + "."
+	s.sendall(endstring)
 
 def proceed(s,received):
 	print "==> New job from tentacle server."
