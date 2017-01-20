@@ -50,8 +50,8 @@ def proceed(s,received):
 	args = " ".split(received)
 	print "recu: ",received, "soit :", args
 	system(received)
-	send_file("mean-life-A.txt", 4)
-	send_file("mean-life-B.txt", 4)
+	send_file("mean-life-A.txt", 12)
+	send_file("mean-life-B.txt", 12)
 
 	send_file("mean-A-in-A.txt", 12)
 	send_file("mean-A-in-B.txt", 12)
@@ -67,6 +67,7 @@ def proceed(s,received):
 	send_file("mean-C-out.txt", 12)
 
 	system("rm *.txt *.gif")
+	s.sendall("end of job !")
 	print "==> One job completed.\n"
 	exit()
 
