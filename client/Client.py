@@ -3,10 +3,39 @@ from Tkinter import *
 from tkMessageBox import *
 import sys
 import socket
+import os
 import string
 import signal
+from PIL import Image, ImageTk
 import time
 import select
+
+def clean_file(filename):
+	fichier = open(filename, "r")
+	data = fichier.readlines()
+	fichier.close()
+	for i in xrange(len(data)):
+		while data[i][0] == '0' and len(data[i]) > 2:
+			data[i] = data[i][1:]
+	fichier = open(filename, "w")
+	fichier.writelines(data[:-2]+['\n'])
+	fichier.close()
+
+def receive_file(newSocket, filename, max_size):
+	print "reception de %s..."%filename
+	r = ""
+	output = []
+	while "fin." not in r:
+		r = newSocket.recv(max_size)
+		if (len(r) < max_size):
+		    r = r + newSocket.recv(max_size - len(r))
+		output.append(r+'\n')
+		if not r: break
+	fichier = open(filename, "w")
+	fichier.writelines(output)
+	fichier.close()
+	clean_file(filename)
+	return r
 
 def ParamRequest(value, fen):
     fen.destroy()
@@ -39,7 +68,8 @@ def ParamRequest(value, fen):
             EntryT = Entry(frame, textvariable=valueT, width=30).pack()
             Label(frame, text = "Durée de l'expérience").pack()
             EntryiterMax = Entry(frame, textvariable=valueiterMax, width=30).pack()
-            Button(fenetre2, text="Valider", command=lambda: envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get(), fenetre2)).pack(side = LEFT)
+            #Button(fenetre2, text="Valider", command=lambda: envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get(), fenetre2)).pack(side = LEFT)
+            Button(fenetre2, text="Valider", command=lambda: envoyer("./main run ", fenetre2)).pack(side = LEFT)
             Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
     elif value == 2:
             fenetre2.title("Exploration parametrique (T et A0)")
@@ -84,35 +114,42 @@ def ParamRequest(value, fen):
             Button(fenetre2, text="Valider", command=lambda: envoyer("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueNessai.get(), fenetre2)).pack(side = LEFT)
             Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
     return;
-"""
-def requestIP(params, fenetre2):
-    fenetre2.destroy()
-    fenetre3 = Tk()
-    fenetre3.title('')
-    frame = Frame(fenetre3, borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
-    Label(frame, text = "Merci de rentrer votre adresse IP").pack()
-    valueIP = StringVar() 
-    valueIP.set("000")
-    EntryIP = Entry(frame, textvariable=valueIP, width=30).pack()
-    Button(fenetre3, text="Valider", command=lambda: envoyer(params, valueIP.get())).pack(side = LEFT)
-    Button(fenetre3, text="Fermer", command=fenetre3.destroy).pack(side = RIGHT)
-    return;
-"""
+
 def signal_handler(signal, frame):
     print 'You pressed Ctrl+C !'
 
 def envoyer(params, fenetre):
-    fenetre.destroy()    
+    fenetre.destroy()
     signal.signal(signal.SIGINT, signal_handler)
     print 'Press Ctrl+C pour arreter le client'
-    params = params
+    fenetre2 = Tk()
+    frame = Frame(fenetre2, borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
+    lab = Label(fenetre2, text = "Calculs en cours").pack()
+    fenetre2.mainloop()
+    for i in range(len(params), 255):
+	params += " ";
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.connect(("134.214.159.33", 6666))
-        print s.recv(255)
+        s.connect(("192.168.0.46", 6666))
+        print s.recv(29)
         s.sendall(params)
-        print s.recv(255)
+ 	if "run" in params:
+		received = receive_file(s, "mean-life-A.txt", 12)
+		if received: received = receive_file(s,"mean-life-B.txt", 12)
+		if received: received = receive_file(s,"mean-A-in-A.txt", 12)
+		if received: received = receive_file(s,"mean-A-in-B.txt", 12)
+		if received: received = receive_file(s,"mean-B-in-A.txt", 12)
+		if received: received = receive_file(s,"mean-B-in-B.txt", 12)
+		if received: received = receive_file(s,"mean-C-in-A.txt", 12)
+		if received: received = receive_file(s,"mean-C-in-B.txt", 12)
+		if received: received = receive_file(s,"mean-A-out.txt", 12)
+		if received: received = receive_file(s,"mean-B-out.txt", 12)
+		if received: received = receive_file(s,"mean-C-out.txt", 12)
+		if received:
+			os.system("Rscript Analyse.R")
+		afficher1(fenetre2)
+		os.system("rm *.txt")
     except socket.error, e:
         print "erreur dans l'appel a une methode de la classe socket : %s"%e
         sys.exit(1)
@@ -122,10 +159,23 @@ def envoyer(params, fenetre):
     print "fin"
     return;
 
+def afficher1(ancienne):
+    ancienne.destroy()
+    fenetre = Tk()
+    path = os.getcwd()
+    fenetre.title('Résultats')
+    monimage = Image.open(path+'/th.png') 
+    photo = ImageTk.PhotoImage(monimage)
+    lab = Label(image = photo)
+    lab.image=photo
+    lab.pack()
+    Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
+    fenetre.mainloop()
+
+
 def main():
     fenetre = Tk()
-    f1 = Frame(fenetre, bg='purple', borderwidth=2, relief=GROOVE)
-    f1.pack(padx=1, pady=1)
+    f1 = Frame(fenetre, bg='purple', borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
     fenetre.title('')
     label = Label(f1, text = "Merci de choisir la requête à envoyer").pack()
     valueRequest = IntVar() 
