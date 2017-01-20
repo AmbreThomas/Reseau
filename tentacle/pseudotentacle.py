@@ -26,18 +26,22 @@ try:
 			CliSocket, Cliip = sock_clients.accept()
 			CliSocket.sendall("Tentacle accepte ta demande.")
 
-			demande = CLiSocket.recv(255)
+			demande = CliSocket.recv(255)
 			print "Client %s asks: %s"%(Cliip[0], demande)
 			ServSocket.sendall(demande)
 
 			while 1: #Tant que le serveur envoie
-				received = ServSocket.rcv(12)
+				received = ServSocket.recv(12)
 				if received=="end of job !" or not received: break
-				CliSocket.sendall(received)
+				try:
+					CliSocket.sendall(received)
+				except:
+					print "Le client a abandonne !"
+					break
 			if not received:
 				print "Server %s has left."% Servip[0]
 				break
-			print "Une demande terminee."
+			print "Demande de %s terminee."%Cliip[0]
 
 
 finally:
