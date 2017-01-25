@@ -4,14 +4,14 @@ import threading
 from os import system
 from time import sleep
 
-tentacle_ip = "192.168.0.46"
+tentacle_ip = "134.214.159.34"
 
 s = socket(AF_INET, SOCK_STREAM)
 s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
 print "Disponible..."
 s.connect( (tentacle_ip, 7777) )
-print s.recv(29)
+print s.recv(20)
 
 
 threads = []
@@ -47,7 +47,8 @@ def send_file(filename, max_size):
 
 def proceed(s,received):
 	print "==> New job from tentacle server."
-	args = " ".split(received)
+	received = " ".join(received.split(" ")[2:])
+	args = received.split(" ")
 	print "recu: ",received, "soit :", args
 	system(received)
 	send_file("mean-life-A.txt", 12)
