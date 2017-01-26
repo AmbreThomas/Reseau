@@ -10,7 +10,11 @@ from PIL import Image, ImageTk
 import time
 import select
 
-tentacle_ip = "134.214.159.34"
+tentacle_ip = "192.168.0.46"
+
+def geoliste(g):
+	r = [i for i in range (0, len(g)) if not g[i].isdigit()]
+	return [int(g[0:r[0]]), int(g[r[0]+1:r[1]])]
 
 def clean_file(filename):
 	fichier = open(filename, "r")
@@ -131,6 +135,7 @@ def envoyer(params, fenetre):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.connect((tentacle_ip, 6666))
+        s.sendall("ask ")
         print s.recv(29)
     	popup = showinfo("", "Les calculs sont prêts à être effectués. Cliquez sur OK pour continuer.")
         s.sendall(params)
@@ -161,6 +166,9 @@ def envoyer(params, fenetre):
 
 def afficher1(fenetre):
     path = os.getcwd()
+    h = fenetre.winfo_screenheight()
+    w = fenetre.winfo_screenwidth()
+    fenetre.geometry('350x150+' + str(w/2-350/2) + '+'+ str(h/2-150/2))
     fenetre.title('Résultats')
     monimage = Image.open(path+'/th.png') 
     photo = ImageTk.PhotoImage(monimage)
@@ -172,21 +180,23 @@ def afficher1(fenetre):
 
 def main():
     fenetre = Tk()
-    path = os.getcwd()
-    image = Image.open(path+'/wallp.jpeg')
-    photo = ImageTk.PhotoImage(image)
-    fenetre.configure(width = 1000, height = 450)
-    f1 = Canvas(fenetre, width = 1000, height = 450)
-    f1.pack()
+    f1 = Frame(fenetre).pack(padx = 1, pady = 1)
     fenetre.title('')
     label = Label(f1, text = "Merci de choisir la requête à envoyer").pack()
-    valueRequest = IntVar() 
+    valueRequest = IntVar()
     valueRequest.set(1)
-    Radiobutton(fenetre, text="Realiser une simulation", variable=valueRequest, value=1).pack(anchor=W)
-    Radiobutton(fenetre, text="Exploration parametrique (T et A0)", variable=valueRequest, value=2).pack(anchor=W)
-    Radiobutton(fenetre, text="Exploration parametrique (T, A0 et Dmax)", variable=valueRequest, value=3).pack(anchor=W)
-    Button(fenetre, text="Valider", command=lambda: ParamRequest(valueRequest.get(), fenetre)).pack(side = LEFT)
-    Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
+    Radiobutton(f1, text="Realiser une simulation", variable=valueRequest, value=1).pack(anchor=W)
+    Radiobutton(f1, text="Exploration parametrique (T et A0)", variable=valueRequest, value=2).pack(anchor=W)
+    Radiobutton(f1, text="Exploration parametrique (T, A0 et Dmax)", variable=valueRequest, value=3).pack(anchor=W)
+    Button(f1, text="Valider", command=lambda: ParamRequest(valueRequest.get(), fenetre)).pack(side = LEFT)
+    Button(f1, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
+    print fenetre.geometry()
+    L, H = geoliste(fenetre.geometry())
+    h = fenetre.winfo_screenheight()
+    w = fenetre.winfo_screenwidth()
+    L = 350
+    H = 150
+    fenetre.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
     fenetre.mainloop()
 
 main()
