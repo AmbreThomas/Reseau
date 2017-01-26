@@ -120,12 +120,9 @@ def signal_handler(signal, frame):
 
 def envoyer(params, fenetre):
     fenetre.destroy()
+    fenetre2=Tk()
     signal.signal(signal.SIGINT, signal_handler)
     print 'Press Ctrl+C pour arreter le client'
-    fenetre2 = Tk()
-    frame = Frame(fenetre2, borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
-    lab = Label(fenetre2, text = "Calculs en cours").pack()
-    fenetre2.mainloop()
     for i in range(len(params), 255):
 	params += " ";
     try:
@@ -133,6 +130,7 @@ def envoyer(params, fenetre):
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.connect(("192.168.0.46", 6666))
         print s.recv(29)
+    	popup = showinfo("", "Les calculs sont prêts à être effectués. Cliquez sur OK pour continuer.")
         s.sendall(params)
  	if "run" in params:
 		received = receive_file(s, "mean-life-A.txt", 12)
@@ -159,9 +157,7 @@ def envoyer(params, fenetre):
     print "fin"
     return;
 
-def afficher1(ancienne):
-    ancienne.destroy()
-    fenetre = Tk()
+def afficher1(fenetre):
     path = os.getcwd()
     fenetre.title('Résultats')
     monimage = Image.open(path+'/th.png') 
@@ -172,10 +168,14 @@ def afficher1(ancienne):
     Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
     fenetre.mainloop()
 
-
 def main():
     fenetre = Tk()
-    f1 = Frame(fenetre, bg='purple', borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
+    path = os.getcwd()
+    image = Image.open(path+'/wallp.jpeg')
+    photo = ImageTk.PhotoImage(image)
+    fenetre.configure(width = 1000, height = 450)
+    f1 = Canvas(fenetre, width = 1000, height = 450)
+    f1.pack()
     fenetre.title('')
     label = Label(f1, text = "Merci de choisir la requête à envoyer").pack()
     valueRequest = IntVar() 
