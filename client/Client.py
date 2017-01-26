@@ -10,6 +10,8 @@ from PIL import Image, ImageTk
 import time
 import select
 
+tentacle_ip = "134.214.159.34"
+
 def clean_file(filename):
 	fichier = open(filename, "r")
 	data = fichier.readlines()
@@ -124,11 +126,11 @@ def envoyer(params, fenetre):
     signal.signal(signal.SIGINT, signal_handler)
     print 'Press Ctrl+C pour arreter le client'
     for i in range(len(params), 255):
-	params += " ";
+		params += " "
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.connect(("192.168.0.46", 6666))
+        s.connect((tentacle_ip, 6666))
         print s.recv(29)
     	popup = showinfo("", "Les calculs sont prêts à être effectués. Cliquez sur OK pour continuer.")
         s.sendall(params)

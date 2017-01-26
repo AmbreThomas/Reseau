@@ -7,198 +7,241 @@
 
 import socket
 import threading
+import select
 import time
 import signal
 import sys
 import time
+from os import system
 
 #traiter l'arrêt
 def signal_handler_stop(signal, frame):
-    global WorkingServ
-    global WorkingComp
-    if (not WorkingServ) & WorkingComp :
-        print('The subcontractors stop working (Ctrl+C)')
-        WorkingComp = False #pour arrêt des thread. #essayer exemple minimal...
-    if WorkingServ :
-        print('We do not accept new clients anymore (Ctrl+C)')
-        WorkingServ = False #pour arrêt de l'écoute
-
-#gérer la relation client
-def handlerCLI(clientsock,sema,poolCLI,poolSUB):
-    #prendre en compte absence de sub...
-
-    ##ICI PREMIER CONTACT AVEC CLIENT
-    if poolCLI.getsize() > self.nbcli :
-        #refuser, dire qu'ils vont devoir attendre.
-        clientsock.send("Connection accepted. Please wait, your request will be processed when we are over with our current clients.")
-    else :
-        clientsock.send("Connection accepted.")
-
-    with sema:
-        #on peut pas join sur tout poolSUB parce qu'il aura peut etre changé ? (DEPEND SI GLOBAL... )-> faire une copie maintenant.
-        poolCLI.makeActive(clientsock) 
-        clientsock.send("Send your request")
-        recept = True
-        while recept :
-            ArgsClI = clientsock.rcv(1024)
-        #ArgsClI = arguments (espacés)
-        
-        clientsock.send("Request accepted. "+str(poolSUB.getsize())+" subcontractors are taking care of it")        
-        Request, fraction = self.makeRequest(ArgsCLI) #on espère qu'on aura pas de déco sauvage de subcontracteur...
-        #fraction : nombre de sous partie du problème !
-        missingParts = True
-        parts = 0
-        while missingParts :
-            readable, writable, errored = select.select(poolSUB.active,[],[])
-            for i,sockSUB in enumerate(readable) :
-                #vérifier qu'un sub ne s'est pas déco, etc.
-                with poolSUB.activelock[sockSUB] :
-                    idmission = 
-                    #recevoir l'identifiant de la mission : si c'est le bon alors on enregistre, sinon
-                    if idmission != poolCLI.activeID[clientsock] :    
-                        time.sleep(1) #laisse 1s à autre thread pour voir si la mission était à lui !
-                    else :
-                        #recevoir l'identifiant de la partie
-                        idpartie =
-
-                        #ENREGISTRER LA PARTIE DU RESULTAT
-                        resultat[idpartie] = clientsock.rcv(1024) #CHANGER CA
-
-                        parts+=1
-                        if parts == fraction :
-                            missingParts = False
-                            resultat = self.assemble(resultat)
-                            break
-                if badCliId :
-                    time.sleep(1) #laisse 1s à autre thread pour voir si la mission était à lui !
-    poolCLI.makeInactive(clientsock)
-    sema.release()
-
-
-#gérer la relation subcontractors
-def handlerSUB(subsock,poolCLI,poolSUB) :
-    print('New subcontractor...')
-    poolSUB.makeActive(subsock)
-    subsock.send("Connection accepted.")
-    while WorkingComp :
-        pass
-    #leur envoyer un message a l'arret du travail !
-    subsock.send('STOP')
-    poolSUB.makeInactive(subsock)
+	global WorkingServ
+	global WorkingComp
+	if (not WorkingServ) & WorkingComp :
+		print('The subcontractors stop working (Ctrl+C)')
+		WorkingComp = False #pour arrêt des thread. #essayer exemple minimal...
+	if WorkingServ :
+		print('We do not accept new clients anymore (Ctrl+C)')
+		WorkingServ = False #pour arrêt de l'écoute
 
 #sauvegarde de socket et suivi de leur activité.
 #name désigne la socket
 class ActivePool(object):
-    def __init__(self):
-        super(ActivePool, self).__init__()
-        self.active = []
-        self.activeID = {}
-        self.activelock = {}
-        self.size = 0
-        self.x = 0
-        self.lock = threading.Lock() #pour ne pas avoir d'accès simultané à l'objet
-    def makeActive(self, name):
-        with self.lock:
-            self.active.append(name)
-            self.activeID[name] = self.x
-            self.activelock[name] = threading.Lock()
-            self.x+=1
-            self.size+=1
-    def makeInactive(self, name):
-        with self.lock:
-            del self.activeID[name]
-            del self.activelock[name]
-            self.active.remove(name)
-            self.size-=1
-            name.shutdown(1)
-            name.close()
-    def __str__(self):
-        with self.lock:
-            return(str(self.active))
-    def getsize(self):
-        return(self.size))
-    def close(self) :
-        for so in self.active :
-            so.shutdown(1)
-            so.close()
+	def __init__(self):
+		super(ActivePool, self).__init__()
+		self.active = []
+		self.ID = {}
+		self.lock = {}
+		self.Parts = {}
+		self.size = 0
+		self.x = 0 #compteur d'ID
+	def makeActive(self, name):
+		self.active.append(name)
+		self.ID[name] = self.x
+		self.Parts[name] = []
+		self.lock[name] = threading.Lock()
+		self.acquired_parts[name] = {}
+		self.x+=1
+		self.size+=1
+	def makeInactive(self, name):
+		del self.ID[name]
+		del self.lock[name]
+		del self.Parts[name]
+		del self.Parts[name]
+		self.active.remove(name)
+		self.size-=1
+		name.shutdown(1)
+		name.close()
+	def __str__(self):
+		return(str(self.active))
+	def get_sockCLI(self, id) :
+		nameS = [k for k, v in list(d.items()) if v == id]
+		if len(nameS) == 0 :
+			print("problem : unknow id")
+		else :
+			return(nameS[0])
+	def get_size(self):
+		return(self.size)
+	def get_nb_of_disponible_parts(self,name) :
+		return(len(self.acquired_parts))
+	def get_acquired_parts(self) :
+		return(self.acquired_parts)
+	def close(self) :
+		for so in self.active :
+			so.shutdown(1)
+			so.close()
 
 class Serveur(object) :
-    def __init__(self):
-        ## paramètres
-        self.port1 = sys.argv[1]
-        self.port2 = sys.argv[2]
-        self.nbcli = sys.argv[3]
-        #self.TAILLE_BLOC=1024
+	def __init__(self):
+		try :
+			print("Cleaning the place.")
+			system("rd /s /q TMP_files")
+			system("md TMP_files")
+		except :
+			pass
+		self.port1 = sys.argv[1]
+		## gestion de l'arrêt
+		global WorkingServ
+		WorkingServ = True
+		global WorkingComp
+		WorkingComp = True
 
-        ## gestion de l'arrêt
-        global WorkingServ
-        WorkingServ = True
-        global WorkingComp
-        WorkingComp = True
+		## gestion des connexions (multiples)
+		self.AllThreadCLI = []
+		self.AllThreadSUB = []
+		self.poolCLI = ActivePool()
+		self.poolCLI_lock = threading.Lock()
 
-        ## gestion des connexions (multiples)
-        AllThreadCLI = []
-        AllThreadSUB = []
-        poolCLI = ActivePool() #les déclarer global peut-etre et mettre global dans les handler ????????
-        poolSUB = ActivePool()
-        sema = BoundedSemaphore(value=self.nbcli)
+		self.poolSUB = ActivePool()
+		self.poolCLI_lock = threading.Lock()
 
-        sockCLI = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sockCLI.bind(('',int(self.port1)))
-        sockCLI.listen(10)
-        print('Listening Clients on port %d' %self.port1)
+		self.Queue = []
+		self.Queue_lock = threading.Lock()
 
-        sockSUB = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sockSUB.biend('',int(self.port2))
-        sockSUB.listen(10)
-        print('Listening Subcontractors on port %d'%self.port2)
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+		sock.bind(('',int(self.port1)))
+		sock.listen(20)
+		print('Listening on port %s'%self.port1)
 
-        waiting_list = [socketCLI, socketSUB]
-        while WorkingServ :
-            readable, writable, errored = select.select(waiting_list,[],[]) #wait for a potential connection
-            for sock in readable :
-                if sock is sockCLI :
-                    clientsock, addr = sock.accept()
-                    sema.acquire()
-                    print('A Client is connected : %s:%d' % addr)
-                    t = threading.Thread(target=handlerCLI, args=(clientsock,sema,poolCLI,poolSUB))
-                    AllThreadCLI.append(t)
-                    t.start()
-                    print('Client currently connected are :')
-                    print(poolCLI)
-                elif sock is sockSUB :
-                    subsock,addr = sock.accept()
-                    print('A subcontractor wants to work : %s:%d' %addr)
-                    t = threading.Thread(target=handlerSUB, args = (subsock,poolSUB))
-                    AllThreadSUB.append(t)
-                    t.start()
-                    print('Subcontractors currently connected are :')
-                    print(poolSUB)
-            #enlever les thread obsoletes, etc.
+		while WorkingServ :
+			try :
+				readable, writable, errored = select.select([sock], [], [],timeout = 0)
+			except :
+				time.sleep(1)
+			else :
+				for s in readable :
+					mysocket, myaddr = s.accept()
+					statut = s.recv(12)
+					if "ask" in statut :
+						print('A Client is connected : %s:%d' % myaddr)
+						t = threading.Thread(target=self.handlerCLI, args=[mysocket])
+						self.AllThreadCLI.append(t)
+						t.start()
+						with self.poolCLI_lock :
+							print(str(self.poolCLI.get_size())+" client(s) actually connected.")
+					elif "work" in statut :
+						print('A subcontractor is connected : %s:%d' % myaddr)
+						t = threading.Thread(target=self.handlerSUB, args=[mysocket])
+						self.AllThreadSUB.append(t)
+						t.start()
+						with self.poolSUB_lock :
+							print(str(self.poolSUB.get_size())+" subcontractor(s) actually connected.")
+		for t in self.AllThreadCLI :
+			t.join()
+		WorkingComp = False
+		for t in self.AllThreadSUB :
+			t.join()
+		print('All operations over.')
 
-        print('Ctrl+c pressed : no more client and subcontracctors accepted')
+	def fractionne(self, demande_cli, id_client) :
+		#transformer le string en n string dans une liste de taille n
+		#chaque part est précédée de l'id_cli et d'un numéro de part.
+		#["id_cli id_part demande",...]
+		if "run" in demande_cli:
+			demande = str(id_client)+' 1 '+ demande_cli
+			return ([demande[:255]], 1)
+		return(frac_demande, len(frac_demande))
 
-        #les thread tournent encore.
-        #join sur tous les thread qui devraient s'arrêter (puis fermeture de thread ?? pas la peine car fin du script )
-        #(différent de fermeture de socket qui se fait dans thread)
-        for t in allThreadCLI :
-            t.join()
-        WorkingComp = False
-        for t in allThreadSUB :
-            t.join()
-        print('All operations over')
+	#gérer la relation client
+	def handlerCLI(self,clientsock):
+		## Lien et réception de la reuqête.
+		clientsock.sendall("Request accepted")     
+		with self.poolCLI_lock :    
+			self.poolCLI.makeActive(clientsock) 
+		try :
+			demande = clientsock.recv(255)
+		except :
+			print("CLI is gone.")
+			#handle...
+		else :
+			print("Client asks: %s"%(demande))
+			with self.poolCLI_lock :
+				frac_demande, nb_of_parts = self.fractionne(demande,self.poolCLI.ID[clientsock])
+			with self.Queue_lock :
+				self.Queue.extend(frac_demande)
+			#réception des résultats
+			parts = 0
+			while parts < nb_of_parts :
+				with self.poolCLI_lock :
+					parts_waiting = self.poolCLI.get_nb_of_disponible_parts()
+					if  parts_waiting != 0 :
+						p_file_addr = self.poolCLI.Parts[clientsock].pop(0)
+				if parts_waiting != 0 :
+					p_file = open(p_file_addr,'r')
+					part = p_file.readlines()
+					p_file.close()
+					try :
+						for line in part:
+							if len(line)>1:
+								clientsock.sendall(line[:-1])
+							else:
+								clientsock.sendall(line)
+					except :
+						print('CLI does not receive well')
+					parts+=1
+				else :
+					time.sleep(2)
+					pass
+			print("All parts acquired for client N° : "+str(self.poolCLI.ID[clientsock]))
 
-    def makeRequest(ArgsCLI, poolS) :
-        Request = ""
-        return(Request)
+		self.poolCLI.makeInactive(clientsock)
 
-## main
+	def handlerSUB(self,subsock) :
+		print('New subcontractor accepted.')
+		self.poolSUB.makeActive(subsock)
+		subsock.sendall("Connection accepted.")
+		print('Subcontractors currently connected are :')
+		print(self.poolSUB)
+		print('\n')
+		while WorkingComp :
+			with self.Queue_lock :
+				request = self.Queue.pop(0)
+			try :
+				subsock.sendall(request) #id_cli id_part mission
+			except :
+				print("SUB is gone")
+				with self.Queue_lock :
+					self.Queue_lock = [request] + self.Queue_lock
+				poolSUB.makeInactive(subsock)
+				break
+			subsock.settimeout(None)  #comment ne pas bloquer mais sortir si il était déjà parti...?
+			try :
+				ID_mission = subsock.recv()
+			except :
+				print("SUB is gone")
+				with self.Queue_lock :
+					self.Queue_lock = [request] + self.Queue_lock
+				poolSUB.makeInactive(subsock)
+				break
+			[ID_cli, ID_part] = ID_mission.split() 
+			rep_addr = "TMP_files\CLI"+str(ID_cli)
+			file_adrr = +"TMP_files\CLI"+str(ID_cli)+"\PART"+str(ID_part)+".txt"
+
+			out_file = open(file_addr,'w')
+			results = "" 
+			while True :
+				try :
+					results = subsock.recv(12)
+				except :
+					print('The subcontactor stopped emitting.')
+					with self.Queue_lock :
+						self.Queue_lock = [request] + self.Queue_lock
+					out_file.close()
+					poolSUB.makeInactive(subsock)
+					break
+				if results == "end of job !" :
+					break
+				out_file.write(results+'\n')
+			out_file.close()
+		poolSUB.makeInactive(subsock)
+
 if __name__=="__main__":
-    import sys
-    if len(sys.argv)<4:
-        print("usage : %s <port1> <port2> <nbclients>" % (sys.argv[0],))
-        sys.exit(-1)
-    signal.signal(signal.SIGINT, signal_handler) #1er CTRL+C gère arrêt écoute, 2e gère arrêt clients.
-    Serveur()
-##6666, 7777
-
+	import sys
+	if len(sys.argv)<2:
+		print("usage : %s <port1>" % (sys.argv[0],))
+		sys.exit(-1)
+	signal.signal(signal.SIGINT, signal_handler_stop) #1er CTRL+C gère arrêt écoute, 2e gère arrêt clients.
+	Serveur()
+##6666
