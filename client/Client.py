@@ -10,7 +10,7 @@ from PIL import Image, ImageTk
 import time
 import select
 
-tentacle_ip = "192.168.0.46"
+tentacle_ip = "127.0.0.1"
 
 def geoliste(g):
 	r = [i for i in range (0, len(g)) if not g[i].isdigit()]

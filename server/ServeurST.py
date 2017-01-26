@@ -4,7 +4,7 @@ from multiprocessing import *
 from os import system
 from time import sleep
 
-tentacle_ip = "192.168.0.46"
+tentacle_ip = "127.0.0.1"
 
 def newsubcontractor(i):
 	s = socket(AF_INET, SOCK_STREAM)
@@ -17,26 +17,29 @@ def newsubcontractor(i):
 			received = s.recv(255)
 			if received: #Accepte une demande de tentacle
 				print "==> New job from tentacle server."
+				jobID = " ".join(received.split(" ")[:2])
 				received = " ".join(received.split(" ")[2:])
 				args = received.split(" ")
-				print "recu sur la machine %d: "%i,received, "soit :", args
+				print "recu sur la machine %d: "%i,received,"(job ID :",jobID,")"
 				system(received)
+				while len(jobID)<12:
+					jobID = jobID+" "
+				s.sendall(jobID)
 				if "run" in received:
-					send_file("mean-life-A.txt", 12)
-					send_file("mean-life-B.txt", 12)
-					send_file("mean-A-in-A.txt", 12)
-					send_file("mean-A-in-B.txt", 12)
-					send_file("mean-B-in-A.txt", 12)
-					send_file("mean-B-in-B.txt", 12)
-					send_file("mean-C-in-A.txt", 12)
-					send_file("mean-C-in-B.txt", 12)
-					send_file("mean-A-out.txt", 12)
-					send_file("mean-B-out.txt", 12)
-					send_file("mean-C-out.txt", 12)
+					send_file(s, "mean-life-A.txt", 12)
+					send_file(s, "mean-life-B.txt", 12)
+					send_file(s, "mean-A-in-A.txt", 12)
+					send_file(s, "mean-A-in-B.txt", 12)
+					send_file(s, "mean-B-in-A.txt", 12)
+					send_file(s, "mean-B-in-B.txt", 12)
+					send_file(s, "mean-C-in-A.txt", 12)
+					send_file(s, "mean-C-in-B.txt", 12)
+					send_file(s, "mean-A-out.txt", 12)
+					send_file(s, "mean-B-out.txt", 12)
+					send_file(s, "mean-C-out.txt", 12)
 					system("rm *.txt *.gif")
 				s.sendall("end of job !")
 				print "==> One job completed.\n"
-
 
 def normalize_file(filename, size):
 	fichier = open(filename, "r")
@@ -51,7 +54,7 @@ def normalize_file(filename, size):
 	fichier.writelines(data)
 	fichier.close()
 
-def send_file(filename, max_size):
+def send_file(target_sock, filename, max_size):
 	print "envoi de %s..."%filename
 	normalize_file(filename, max_size)
 	fichier = open(filename, "r")
@@ -59,13 +62,13 @@ def send_file(filename, max_size):
 	fichier.close()
 	for line in data:
 		if len(line)>1:
-			s.sendall(line[:-1])
+			target_sock.sendall(line[:-1])
 		else:
-			s.sendall(line)
+			target_sock.sendall(line)
 	endstring = "fin."
 	while len(endstring)<max_size:
 		endstring = endstring + "."
-	s.sendall(endstring)
+	target_sock.sendall(endstring)
 
 if __name__ == '__main__':
 	jobs = []

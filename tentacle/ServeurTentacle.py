@@ -20,7 +20,6 @@ def signal_handler_stop(signal, frame):
 	global WorkingComp
 	if (not WorkingServ) & WorkingComp :
 		print('The subcontractors stop working (Ctrl+C)')
-		quit()
 		WorkingComp = False #pour arrêt des thread. #essayer exemple minimal...
 	if WorkingServ :
 		print('We do not accept new clients anymore (Ctrl+C)')
@@ -65,7 +64,7 @@ class ActivePool(object):
 			return(nameS[0])
 	def get_size(self):
 		return(self.size)
-	def get_nb_of_disponible_parts(self,name) :
+	def get_nb_of_disponible_parts(self) :
 		return(len(self.acquired_parts))
 	def get_acquired_parts(self) :
 		return(self.acquired_parts)
@@ -82,7 +81,7 @@ class Serveur(object) :
 			system("md TMP_files")
 		except :
 			pass
-		self.port1 = sys.argv[1]
+		self.port1 = 6666
 		## gestion de l'arrêt
 		global WorkingServ
 		WorkingServ = True
@@ -106,17 +105,18 @@ class Serveur(object) :
 		sock.bind(('',int(self.port1)))
 		sock.listen(20)
 		print('Listening on port %s'%self.port1)
+		print ""
 
 		while WorkingServ :
 			readable = []
-			while not len(readable):
+			while WorkingServ and not len(readable):
 				time.sleep(1)
 				readable, writable, errored = select.select([sock], [], [], 0)
 			for s in readable :
 				mysocket, myaddr = s.accept()
 				statut = mysocket.recv(4)
 				if "ask " == statut :
-					print('A Client is connected : %s:%d' % myaddr)
+					print('\nA Client is connected : %s:%d' % myaddr)
 					t = threading.Thread(target=self.handlerCLI, args=[mysocket])
 					self.AllThreadCLI.append(t)
 					t.start()
@@ -166,11 +166,16 @@ class Serveur(object) :
 				self.Queue.extend(frac_demande)
 			#réception des résultats
 			parts = 0
-			while parts < nb_of_parts :
+			while WorkingComp and parts < nb_of_parts :
 				with self.poolCLI_lock :
 					parts_waiting = self.poolCLI.get_nb_of_disponible_parts()
 					if  parts_waiting != 0 :
-						p_file_addr = self.poolCLI.Parts[clientsock].pop(0)
+						p_file_addr = ""
+						while WorkingComp and p_file_addr == "":
+							try:
+								p_file_addr = self.poolCLI.Parts[clientsock].pop(0)
+							except IndexError:
+								pass
 				if parts_waiting != 0 :
 					p_file = open(p_file_addr,'r')
 					part = p_file.readlines()
@@ -197,39 +202,39 @@ class Serveur(object) :
 		subsock.sendall("Connection accepted.")
 		print('Subcontractors currently connected are :')
 		print(self.poolSUB)
-		print('\n')
 		while WorkingComp :
-			with self.Queue_lock :
-				request = ""
-				while not len(request):
-					try:
+			request = ""
+			while WorkingComp and not len(request):
+				try:
+					with self.Queue_lock :
 						request = self.Queue.pop(0)
-					except IndexError:
-						time.sleep(1)
-			try :
+				except IndexError:
+					time.sleep(1)
+			try:
 				subsock.sendall(request) #id_cli id_part mission
 			except :
 				print("SUB is gone")
 				with self.Queue_lock :
-					self.Queue_lock = [request] + self.Queue_lock
-				poolSUB.makeInactive(subsock)
+					self.Queue = [request] + self.Queue
+				self.poolSUB.makeInactive(subsock)
 				break
 			subsock.settimeout(None)  #comment ne pas bloquer mais sortir si il était déjà parti...?
-			try :
-				ID_mission = subsock.recv()
+			try: #Attente de l'envoi des fichiers
+				ID_mission = subsock.recv(12)
 			except :
 				print("SUB is gone")
 				with self.Queue_lock :
-					self.Queue_lock = [request] + self.Queue_lock
-				poolSUB.makeInactive(subsock)
+					self.Queue = [request] + self.Queue
+				self.poolSUB.makeInactive(subsock)
 				break
-			[ID_cli, ID_part] = ID_mission.split() 
+			ID_cli = int(ID_mission.split(" ")[0])
+			ID_part = int(ID_mission.split(" ")[1])
 			rep_addr = "TMP_files\CLI"+str(ID_cli)
-			file_adrr = +"TMP_files\CLI"+str(ID_cli)+"\PART"+str(ID_part)+".txt"
+			file_addr = "TMP_files\CLI"+str(ID_cli)+"\PART"+str(ID_part)+".txt"
 
 			out_file = open(file_addr,'w')
 			results = "" 
-			while True :
+			while WorkingComp:
 				try :
 					results = subsock.recv(12)
 				except :
@@ -237,19 +242,20 @@ class Serveur(object) :
 					with self.Queue_lock :
 						self.Queue_lock = [request] + self.Queue_lock
 					out_file.close()
-					poolSUB.makeInactive(subsock)
+					self.poolSUB.makeInactive(subsock)
 					break
 				if results == "end of job !" :
 					break
 				out_file.write(results+'\n')
 			out_file.close()
-		poolSUB.makeInactive(subsock)
+		self.poolSUB.makeInactive(subsock)
+	
+	
 
 if __name__=="__main__":
 	import sys
-	if len(sys.argv)<2:
-		print("usage : %s <port1>" % (sys.argv[0],))
-		sys.exit(-1)
+	#if len(sys.argv)<2:
+	#	print("usage : %s <port1>" % (sys.argv[0],))
+	#	sys.exit(-1)
 	signal.signal(signal.SIGINT, signal_handler_stop) #1er CTRL+C gère arrêt écoute, 2e gère arrêt clients.
 	Serveur()
-##6666
