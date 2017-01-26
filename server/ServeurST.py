@@ -1,20 +1,42 @@
 from socket import *
 from sys import argv
-import threading
+from multiprocessing import *
 from os import system
 from time import sleep
 
-tentacle_ip = "134.214.159.34"
+tentacle_ip = "192.168.0.46"
 
-s = socket(AF_INET, SOCK_STREAM)
-s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+def newsubcontractor(i):
+	s = socket(AF_INET, SOCK_STREAM)
+	s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+	print "Sous-traitant %d disponible."%i
+	s.connect( (tentacle_ip, 6666) )
+	s.sendall("work")
+	print s.recv(20)
+	while 1: #tant que le sous-traitant n'est pas coupe avec Ctrl+C
+			received = s.recv(255)
+			if received: #Accepte une demande de tentacle
+				print "==> New job from tentacle server."
+				received = " ".join(received.split(" ")[2:])
+				args = received.split(" ")
+				print "recu sur la machine %d: "%i,received, "soit :", args
+				system(received)
+				if "run" in received:
+					send_file("mean-life-A.txt", 12)
+					send_file("mean-life-B.txt", 12)
+					send_file("mean-A-in-A.txt", 12)
+					send_file("mean-A-in-B.txt", 12)
+					send_file("mean-B-in-A.txt", 12)
+					send_file("mean-B-in-B.txt", 12)
+					send_file("mean-C-in-A.txt", 12)
+					send_file("mean-C-in-B.txt", 12)
+					send_file("mean-A-out.txt", 12)
+					send_file("mean-B-out.txt", 12)
+					send_file("mean-C-out.txt", 12)
+					system("rm *.txt *.gif")
+				s.sendall("end of job !")
+				print "==> One job completed.\n"
 
-print "Disponible..."
-s.connect( (tentacle_ip, 7777) )
-print s.recv(20)
-
-
-threads = []
 
 def normalize_file(filename, size):
 	fichier = open(filename, "r")
@@ -45,46 +67,12 @@ def send_file(filename, max_size):
 		endstring = endstring + "."
 	s.sendall(endstring)
 
-def proceed(s,received):
-	print "==> New job from tentacle server."
-	received = " ".join(received.split(" ")[2:])
-	args = received.split(" ")
-	print "recu: ",received, "soit :", args
-	system(received)
-	send_file("mean-life-A.txt", 12)
-	send_file("mean-life-B.txt", 12)
-
-	send_file("mean-A-in-A.txt", 12)
-	send_file("mean-A-in-B.txt", 12)
-
-	send_file("mean-B-in-A.txt", 12)
-	send_file("mean-B-in-B.txt", 12)
-
-	send_file("mean-C-in-A.txt", 12)
-	send_file("mean-C-in-B.txt", 12)
-
-	send_file("mean-A-out.txt", 12)
-	send_file("mean-B-out.txt", 12)
-	send_file("mean-C-out.txt", 12)
-
-	system("rm *.txt *.gif")
-	s.sendall("end of job !")
-	print "==> One job completed.\n"
-	exit()
+if __name__ == '__main__':
+	jobs = []
+	for i in range(cpu_count()):
+		p = Process(target=newsubcontractor, args=(i,))
+		jobs.append(p)
+		p.start()
 
 
-try:
-	while 1: #tant que le sous-traitant n'est pas coupe avec Ctrl+C
-		received = s.recv(255)
-		if received: #Accepte une demande de tentacle
-			thread = threading.Thread(target=proceed, args=(s,received)) #lance un thread de calcul
-			thread.start()
-			threads.append(thread)
 
-
-finally: #lorsque le sous-traitant est coupe avec Ctrl+C
-	for t in threads:
-		t.join()
-	s.close()
-	print "Server shut down."
-s.close()
