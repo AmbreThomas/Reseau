@@ -36,6 +36,7 @@ class ActivePool(object):
 		self.Parts = {}
 		self.size = 0
 		self.x = 0 #compteur d'ID
+		self.acquired_parts = {}
 	def makeActive(self, name):
 		self.active.append(name)
 		self.ID[name] = self.x
@@ -94,7 +95,7 @@ class Serveur(object) :
 		self.poolCLI_lock = threading.Lock()
 
 		self.poolSUB = ActivePool()
-		self.poolCLI_lock = threading.Lock()
+		self.poolSUB_lock = threading.Lock()
 
 		self.Queue = []
 		self.Queue_lock = threading.Lock()
@@ -106,28 +107,29 @@ class Serveur(object) :
 		print('Listening on port %s'%self.port1)
 
 		while WorkingServ :
-			try :
-				readable, writable, errored = select.select([sock], [], [],timeout = 0)
-			except :
+			readable = []
+			while not len(readable):
 				time.sleep(1)
-			else :
-				for s in readable :
-					mysocket, myaddr = s.accept()
-					statut = s.recv(12)
-					if "ask" in statut :
-						print('A Client is connected : %s:%d' % myaddr)
-						t = threading.Thread(target=self.handlerCLI, args=[mysocket])
-						self.AllThreadCLI.append(t)
-						t.start()
-						with self.poolCLI_lock :
-							print(str(self.poolCLI.get_size())+" client(s) actually connected.")
-					elif "work" in statut :
-						print('A subcontractor is connected : %s:%d' % myaddr)
-						t = threading.Thread(target=self.handlerSUB, args=[mysocket])
-						self.AllThreadSUB.append(t)
-						t.start()
-						with self.poolSUB_lock :
-							print(str(self.poolSUB.get_size())+" subcontractor(s) actually connected.")
+				readable, writable, errored = select.select([sock], [], [], 0)
+			for s in readable :
+				mysocket, myaddr = s.accept()
+				statut = mysocket.recv(4)
+				if "ask " == statut :
+					print('A Client is connected : %s:%d' % myaddr)
+					t = threading.Thread(target=self.handlerCLI, args=[mysocket])
+					self.AllThreadCLI.append(t)
+					t.start()
+					time.sleep(0.2)
+					with self.poolCLI_lock :
+						print(str(self.poolCLI.get_size())+" client(s) actually connected.")
+				elif "work" == statut :
+					print('A subcontractor is connected : %s:%d' % myaddr)
+					t = threading.Thread(target=self.handlerSUB, args=[mysocket])
+					self.AllThreadSUB.append(t)
+					t.start()
+					time.sleep(0.2)
+					with self.poolSUB_lock :
+						print(str(self.poolSUB.get_size())+" subcontractor(s) actually connected.")
 		for t in self.AllThreadCLI :
 			t.join()
 		WorkingComp = False
@@ -197,7 +199,12 @@ class Serveur(object) :
 		print('\n')
 		while WorkingComp :
 			with self.Queue_lock :
-				request = self.Queue.pop(0)
+				request = ""
+				while not len(request):
+					try:
+						request = self.Queue.pop(0)
+					except IndexError:
+						time.sleep(1)
 			try :
 				subsock.sendall(request) #id_cli id_part mission
 			except :
