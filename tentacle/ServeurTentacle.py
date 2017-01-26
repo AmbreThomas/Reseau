@@ -20,6 +20,7 @@ def signal_handler_stop(signal, frame):
 	global WorkingComp
 	if (not WorkingServ) & WorkingComp :
 		print('The subcontractors stop working (Ctrl+C)')
+		quit()
 		WorkingComp = False #pour arrêt des thread. #essayer exemple minimal...
 	if WorkingServ :
 		print('We do not accept new clients anymore (Ctrl+C)')
