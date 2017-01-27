@@ -60,6 +60,7 @@ class ActivePool(object):
 		nameS = [k for k, v in list(self.ID.items()) if v == id]
 		if len(nameS) == 0 :
 			print("problem : unknow id")
+			return(-1)
 		else :
 			return(nameS[0])
 	def get_size(self):
@@ -77,8 +78,8 @@ class Serveur(object) :
 	def __init__(self):
 		try :
 			print("Cleaning the place.")
-			system("rd /s /q TMP_files")
-			system("md TMP_files")
+			system("rm -rf TMP_files")
+			system("mkdir TMP_files")
 		except :
 			pass
 		self.port1 = 6666
@@ -131,6 +132,7 @@ class Serveur(object) :
 					time.sleep(0.2)
 					with self.poolSUB_lock :
 						print(str(self.poolSUB.get_size())+" subcontractor(s) actually connected.")
+		print("Joining on the mates.")
 		for t in self.AllThreadCLI :
 			t.join()
 		WorkingComp = False
@@ -204,25 +206,14 @@ class Serveur(object) :
 		print(self.poolSUB)
 		while WorkingComp :
 			request = ""
-			while WorkingComp and not len(request):
-				try:
-					with self.Queue_lock :
-						request = self.Queue.pop(0)
-				except IndexError:
-					time.sleep(1)
 			try:
-				subsock.sendall(request) #id_cli id_part mission
-			except :
-				print("SUB is gone")
 				with self.Queue_lock :
-					self.Queue = [request] + self.Queue
-				with self.poolSUB_lock :
-					self.poolSUB.makeInactive(subsock)
-				break
+					request = self.Queue.pop(0)
+			except IndexError:
+				time.sleep(1)
 			else :
-				subsock.settimeout(None)  #comment ne pas bloquer mais sortir si il était déjà parti...?
-				try: #Attente de l'envoi des fichiers
-					ID_mission = subsock.recv(12)
+				try:
+					subsock.sendall(request) #id_cli id_part mission
 				except :
 					print("SUB is gone")
 					with self.Queue_lock :
@@ -231,34 +222,48 @@ class Serveur(object) :
 						self.poolSUB.makeInactive(subsock)
 					break
 				else :
-					ID_cli = int(ID_mission.split(" ")[0])
-					ID_part = int(ID_mission.split(" ")[1])
-					rep_addr = "TMP_files/CLI"+str(ID_cli)
-					file_addr = "TMP_files/CLI"+str(ID_cli)+"/PART"+str(ID_part)+".txt"
-					out_file = open(file_addr,'w')
-					results = "" 
-					while WorkingComp:
-						try :
-							results = subsock.recv(12)
-						except :
-							print('The subcontractor stopped emitting.')
-							with self.Queue_lock :
-								self.Queue_lock = [request] + self.Queue_lock
-							out_file.close()
-							with self.poolSUB_lock :
-								self.poolSUB.makeInactive(subsock)
-							break
-						else :
-							if results == "end of job !" :
-								break
-						out_file.write(results+'\n')
-					out_file.close()
-					if results == "end of job" :
-						with self.poolCLI_lock :
-							clientsock = self.poolCLI.get_sockCLI(ID_cli)
-							self.poolCLI.Parts[clientsock].append(file_addr)
-					else :
+					subsock.settimeout(None)  #comment ne pas bloquer mais sortir si il était déjà parti...?
+					try: #Attente de l'envoi des fichiers
+						ID_mission = subsock.recv(12)
+					except :
+						print("SUB is gone")
+						with self.Queue_lock :
+							self.Queue = [request] + self.Queue
+						with self.poolSUB_lock :
+							self.poolSUB.makeInactive(subsock)
 						break
+					else :
+						print('ID mission vaut : ')
+						print(ID_mission)
+						ID_cli = int(ID_mission.split(" ")[0])
+						ID_part = int(ID_mission.split(" ")[1])
+						system("mkdir -p TMP_files/CLI"+str(ID_cli))
+						rep_addr = "TMP_files/CLI"+str(ID_cli)
+						file_addr = "TMP_files/CLI"+str(ID_cli)+"/PART"+str(ID_part)+".txt"
+						out_file = open(file_addr,'w')
+						results = "" 
+						while WorkingComp:
+							try :
+								results = subsock.recv(12)
+							except :
+								print('The subcontractor stopped emitting.')
+								with self.Queue_lock :
+									self.Queue_lock = [request] + self.Queue_lock
+								out_file.close()
+								with self.poolSUB_lock :
+									self.poolSUB.makeInactive(subsock)
+								break
+							else :
+								if results == "end of job !" :
+									break
+								out_file.write(results+'\n')
+						out_file.close()
+						if results == "end of job" :
+							with self.poolCLI_lock :
+								clientsock = self.poolCLI.get_sockCLI(ID_cli)
+								self.poolCLI.Parts[clientsock].append(file_addr)
+						else :
+							break
 		if WorkingComp :
 			with self.poolSUB_lock :
 				self.poolSUB.makeInactive(subsock)
