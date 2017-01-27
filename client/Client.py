@@ -12,6 +12,8 @@ import select
 
 tentacle_ip = "127.0.0.1"
 
+global enregistrer;
+
 def geoliste(g):
 	r = [i for i in range (0, len(g)) if not g[i].isdigit()]
 	return [int(g[0:r[0]]), int(g[r[0]+1:r[1]])]
@@ -167,6 +169,9 @@ def envoyer(params, fenetre):
 			os.system("Rscript Analyse.R")
 		afficher(1, fenetre2)
 		os.system("rm *.txt")
+		global enregistrer
+		if (not enregistrer):
+			os.system("rm th.png")
         if "all" in params:
 		fichier = open("results.txt", "w")
 		received = add_file(s, 12, "results.txt")
@@ -179,6 +184,9 @@ def envoyer(params, fenetre):
 			os.system("Rscript phases.R")
 		afficher(2, fenetre2)
 		os.system("rm *.txt")
+		global enregistrer
+		if (not enregistrer):
+			os.system("rm th2.png")
     except socket.error, e:
         print "erreur dans l'appel a une methode de la classe socket : %s"%e
         sys.exit(1)
@@ -193,21 +201,33 @@ def afficher(nb, fenetre):
     h = fenetre.winfo_screenheight()
     w = fenetre.winfo_screenwidth()
     fenetre.title('Résultats')
-    monimage = Image.open(path+'/th.png') 
-    photo = ImageTk.PhotoImage(monimage)
-    lab = Label(image = photo)
-    lab.image=photo
-    lab.pack()
     if (nb == 1):
         L = 480
         H = 510
         fenetre.geometry('%dx%d+'%(L, H) + str(w/2-L/2) + '+'+ str(h/2-H/2))
+    	monimage = Image.open(path+'/th.png') 
+    	photo = ImageTk.PhotoImage(monimage)
+    	lab = Label(image = photo)
+    	lab.image=photo
+    	lab.pack()
     if (nb == 2):
         L = 480
         H = 510
         fenetre.geometry('%dx%d+'%(L, H) + str(w/2-L/2) + '+' + str(h/2-H/2))
-    Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = BOTTOM)
+    	monimage = Image.open(path+'/th2.png') 
+    	photo = ImageTk.PhotoImage(monimage)
+    	lab = Label(image = photo)
+    	lab.image=photo
+    	lab.pack()
+    global enregistrer
+    enregistrer = 0
+    Button(fenetre, text="Cliquez ici pour enregistrer l'image", command=enregistrer_image).pack(side = LEFT)
+    Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
     fenetre.mainloop()
+
+def enregistrer_image():
+	global enregistrer
+	enregistrer = 1
 
 def main():
     fenetre = Tk()
@@ -221,7 +241,6 @@ def main():
     Radiobutton(f1, text="Exploration parametrique (T, A0 et Dmax)", variable=valueRequest, value=3).pack(anchor=W)
     Button(f1, text="Valider", command=lambda: ParamRequest(valueRequest.get(), fenetre)).pack(side = LEFT)
     Button(f1, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
-    print fenetre.geometry()
     L, H = geoliste(fenetre.geometry())
     h = fenetre.winfo_screenheight()
     w = fenetre.winfo_screenwidth()
