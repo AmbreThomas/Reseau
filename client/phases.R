@@ -1,4 +1,5 @@
-setwd("~/Bureau/AlgoEvol")
+png("th2.png")
+
 Azero = read.table("results.txt")$V1
 T = read.table("results.txt")$V2
 result = read.table("results.txt")$V3
