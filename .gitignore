@@ -5,5 +5,5 @@
 *.txt
 *.ppm
 *.gif
-src/*.o
+server/src/*.o
 client/th.png

@@ -212,8 +212,9 @@ class Serveur(object) :
 			except IndexError:
 				time.sleep(1)
 			else :
-				try:
-					subsock.sendall(request) #id_cli id_part mission
+				subsock.settimeout(None)  #comment ne pas bloquer mais sortir si il était déjà parti...?
+				try: #Attente de l'envoi des fichiers
+					ID_mission = subsock.recv(12)
 				except :
 					print("SUB is gone")
 					with self.Queue_lock :
@@ -222,48 +223,35 @@ class Serveur(object) :
 						self.poolSUB.makeInactive(subsock)
 					break
 				else :
-					subsock.settimeout(None)  #comment ne pas bloquer mais sortir si il était déjà parti...?
-					try: #Attente de l'envoi des fichiers
-						ID_mission = subsock.recv(12)
-					except :
-						print("SUB is gone")
-						with self.Queue_lock :
-							self.Queue = [request] + self.Queue
-						with self.poolSUB_lock :
-							self.poolSUB.makeInactive(subsock)
-						break
-					else :
-						print('ID mission vaut : ')
-						print(ID_mission)
-						ID_cli = int(ID_mission.split(" ")[0])
-						ID_part = int(ID_mission.split(" ")[1])
-						system("mkdir -p TMP_files/CLI"+str(ID_cli))
-						rep_addr = "TMP_files/CLI"+str(ID_cli)
-						file_addr = "TMP_files/CLI"+str(ID_cli)+"/PART"+str(ID_part)+".txt"
-						out_file = open(file_addr,'w')
-						results = "" 
-						while WorkingComp:
-							try :
-								results = subsock.recv(12)
-							except :
-								print('The subcontractor stopped emitting.')
-								with self.Queue_lock :
-									self.Queue_lock = [request] + self.Queue_lock
-								out_file.close()
-								with self.poolSUB_lock :
-									self.poolSUB.makeInactive(subsock)
-								break
-							else :
-								if results == "end of job !" :
-									break
-								out_file.write(results+'\n')
-						out_file.close()
-						if results == "end of job" :
-							with self.poolCLI_lock :
-								clientsock = self.poolCLI.get_sockCLI(ID_cli)
-								self.poolCLI.Parts[clientsock].append(file_addr)
-						else :
+					ID_cli = int(ID_mission.split(" ")[0])
+					ID_part = int(ID_mission.split(" ")[1])
+					system("mkdir -p TMP_files/CLI"+str(ID_cli))
+					rep_addr = "TMP_files/CLI"+str(ID_cli)
+					file_addr = "TMP_files/CLI"+str(ID_cli)+"/PART"+str(ID_part)+".txt"
+					out_file = open(file_addr,'w')
+					results = "" 
+					while WorkingComp:
+						try :
+							results = subsock.recv(12)
+						except :
+							print('The subcontractor stopped emitting.')
+							with self.Queue_lock :
+								self.Queue_lock = [request] + self.Queue_lock
+							out_file.close()
+							with self.poolSUB_lock :
+								self.poolSUB.makeInactive(subsock)
 							break
+						else :
+							if results == "end of job !" :
+								break
+							out_file.write(results+'\n')
+					out_file.close()
+					if results == "end of job" :
+						with self.poolCLI_lock :
+							clientsock = self.poolCLI.get_sockCLI(ID_cli)
+							self.poolCLI.Parts[clientsock].append(file_addr)
+					else :
+						break
 		if WorkingComp :
 			with self.poolSUB_lock :
 				self.poolSUB.makeInactive(subsock)

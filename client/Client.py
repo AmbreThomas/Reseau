@@ -43,6 +43,19 @@ def receive_file(newSocket, filename, max_size):
 	clean_file(filename)
 	return r
 
+def add_file(newSocket, max_size, fichier):
+	print "reception de fichier..."
+	r = ""
+	output = []
+	while "fin." not in r:
+		r = newSocket.recv(max_size)
+		if (len(r) < max_size):
+			r = r + newSocket.recv(max_size - len(r))
+		output.append(r+'\n')
+		if not r: break
+	fichier.writelines(output)
+	return r
+
 def ParamRequest(value, fen):
     fen.destroy()
     fenetre2 = Tk()
@@ -88,9 +101,9 @@ def ParamRequest(value, fen):
             valuezone.set("???")
             Label(frame, text = "Valeur du coefficient de diffusion").pack()
             EntryD = Entry(frame, textvariable=valueD, width=30).pack()
-            Label(frame, text = "Intervalle de concentration en glucose à tester").pack()
+            Label(frame, text = "Intervalle de concentration en glucose à tester(entre 0 et 50)").pack()
             EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
-            Label(frame, text = "Intervalle de temps entre les repiquages à tester").pack()
+            Label(frame, text = "Intervalle de temps entre les repiquages à tester (entre 1 et 1500)").pack()
             EntryT = Entry(frame, textvariable=valueT, width=30).pack()
             Button(fenetre2, text="Valider", command=lambda: envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get(), fenetre2)).pack(side = LEFT)
             Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
@@ -152,7 +165,19 @@ def envoyer(params, fenetre):
 		if received: received = receive_file(s,"mean-C-out.txt", 12)
 		if received:
 			os.system("Rscript Analyse.R")
-		afficher1(fenetre2)
+		afficher(1, fenetre2)
+		os.system("rm *.txt")
+        if "all" in params:
+		fichier = open("results.txt", "w")
+		received = add_file(s, 12, "results.txt")
+		i = 1
+		while (received and i < 6):
+		        received = add_file(s, 12, "results.txt")
+			i += 1
+		fichier.close()
+		if (received):
+			os.system("Rscript phases.R")
+		afficher(2, fenetre2)
 		os.system("rm *.txt")
     except socket.error, e:
         print "erreur dans l'appel a une methode de la classe socket : %s"%e
@@ -163,18 +188,25 @@ def envoyer(params, fenetre):
     print "fin"
     return;
 
-def afficher1(fenetre):
+def afficher(nb, fenetre):
     path = os.getcwd()
     h = fenetre.winfo_screenheight()
     w = fenetre.winfo_screenwidth()
-    fenetre.geometry('350x150+' + str(w/2-350/2) + '+'+ str(h/2-150/2))
     fenetre.title('Résultats')
     monimage = Image.open(path+'/th.png') 
     photo = ImageTk.PhotoImage(monimage)
     lab = Label(image = photo)
     lab.image=photo
     lab.pack()
-    Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
+    if (nb == 1):
+        L = 480
+        H = 510
+        fenetre.geometry('%dx%d+'%(L, H) + str(w/2-L/2) + '+'+ str(h/2-H/2))
+    if (nb == 2):
+        L = 480
+        H = 510
+        fenetre.geometry('%dx%d+'%(L, H) + str(w/2-L/2) + '+' + str(h/2-H/2))
+    Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = BOTTOM)
     fenetre.mainloop()
 
 def main():

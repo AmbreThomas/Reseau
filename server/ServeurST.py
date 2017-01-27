@@ -41,6 +41,10 @@ def newsubcontractor(i):
 					send_file(s, "mean-B-out.txt", 12)
 					send_file(s, "mean-C-out.txt", 12)
 					system("rm *.txt *.gif")
+				if "all" in received:
+					send_file(s, "results.txt", 12)
+				if "explore3D" in received:
+					send_file(s, "results.txt", 12)
 				s.sendall("end of job !")
 				print "==> One job completed.\n"
 
@@ -74,6 +78,9 @@ def send_file(target_sock, filename, max_size):
 	target_sock.sendall(endstring)
 
 if __name__ == '__main__':
+	chdir("src")
+	system("make")
+	chdir("..")
 	jobs = []
 	for i in range(cpu_count()):
 		system("rm -rf %d"%i)
