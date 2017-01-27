@@ -218,6 +218,15 @@ class Serveur(object) :
 				time.sleep(1)
 			else :
 				subsock.settimeout(None)  #comment ne pas bloquer mais sortir si il était déjà parti...?
+				try :
+					subsock.send(request)
+				except :
+					print("SUB is gone")
+					with self.Queue_lock :
+						self.Queue = [request] + self.Queue
+					with self.poolSUB_lock :
+						self.poolSUB.makeInactive(subsock)
+					break
 				try: #Attente de l'envoi des fichiers
 					ID_mission = subsock.recv(12)
 				except :
