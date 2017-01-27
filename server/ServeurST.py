@@ -1,15 +1,18 @@
 from socket import *
 from sys import argv
 from multiprocessing import *
-from os import system
+from os import system, chdir
 from time import sleep
 
 tentacle_ip = "127.0.0.1"
 
 def newsubcontractor(i):
+	system("mkdir %d"%i)
+	system("cp main %d/main"%i)
+	chdir("%d"%i)
 	s = socket(AF_INET, SOCK_STREAM)
 	s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-	print "Sous-traitant %d disponible."%i
+	print "Sous-traitant %d disponible."%(i+1)
 	s.connect( (tentacle_ip, 6666) )
 	s.sendall("work")
 	print s.recv(20)
@@ -20,7 +23,7 @@ def newsubcontractor(i):
 				jobID = " ".join(received.split(" ")[:2])
 				received = " ".join(received.split(" ")[2:])
 				args = received.split(" ")
-				print "recu sur la machine %d: "%i,received,"(job ID :",jobID,")"
+				print "recu sur la machine %d: "%(i+1),received,"(job ID :",jobID,")"
 				system(received)
 				while len(jobID)<12:
 					jobID = jobID+" "
@@ -73,6 +76,7 @@ def send_file(target_sock, filename, max_size):
 if __name__ == '__main__':
 	jobs = []
 	for i in range(cpu_count()):
+		system("rm -rf %d"%i)
 		p = Process(target=newsubcontractor, args=(i,))
 		jobs.append(p)
 		p.start()
