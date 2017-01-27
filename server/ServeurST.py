@@ -7,7 +7,7 @@ from time import sleep
 tentacle_ip = "127.0.0.1"
 
 def newsubcontractor(i):
-	system("mkdir %d"%i)
+	system("mkdir -p %d"%i)
 	system("cp main %d/main"%i)
 	chdir("%d"%i)
 	s = socket(AF_INET, SOCK_STREAM)
@@ -40,11 +40,13 @@ def newsubcontractor(i):
 					send_file(s, "mean-A-out.txt", 12)
 					send_file(s, "mean-B-out.txt", 12)
 					send_file(s, "mean-C-out.txt", 12)
-					system("rm *.txt *.gif")
+					system("rm -f *.txt *.gif")
 				if "all" in received:
 					send_file(s, "results.txt", 12)
+					system("rm -f results.txt")
 				if "explore3D" in received:
 					send_file(s, "results.txt", 12)
+					system("rm -f results.txt")
 				s.sendall("end of job !")
 				print "==> One job completed.\n"
 
