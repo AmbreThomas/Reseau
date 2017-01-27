@@ -230,6 +230,7 @@ class Serveur(object) :
 				break
 			ID_cli = int(ID_mission.split(" ")[0])
 			ID_part = int(ID_mission.split(" ")[1])
+			system("mkdir -p TMP_files/CLI"+str(ID_cli))
 			rep_addr = "TMP_files/CLI"+str(ID_cli)
 			file_addr = "TMP_files/CLI"+str(ID_cli)+"/PART"+str(ID_part)+".txt"
 
