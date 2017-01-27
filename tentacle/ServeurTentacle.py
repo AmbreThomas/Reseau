@@ -77,8 +77,8 @@ class Serveur(object) :
 	def __init__(self):
 		try :
 			print("Cleaning the place.")
-			system("rd /s /q TMP_files")
-			system("md TMP_files")
+			system("rm -rf TMP_files")
+			system("mkdir TMP_files")
 		except :
 			pass
 		self.port1 = 6666
@@ -230,8 +230,9 @@ class Serveur(object) :
 				break
 			ID_cli = int(ID_mission.split(" ")[0])
 			ID_part = int(ID_mission.split(" ")[1])
-			rep_addr = "TMP_files\CLI"+str(ID_cli)
-			file_addr = "TMP_files\CLI"+str(ID_cli)+"\PART"+str(ID_part)+".txt"
+			system("mkdir -p TMP_files/CLI"+str(ID_cli))
+			rep_addr = "TMP_files/CLI"+str(ID_cli)
+			file_addr = "TMP_files/CLI"+str(ID_cli)+"/PART"+str(ID_part)+".txt"
 
 			out_file = open(file_addr,'w')
 			results = "" 
