@@ -49,7 +49,7 @@ class ActivePool(object):
 		del self.ID[name]
 		del self.lock[name]
 		del self.Parts[name]
-		del self.Parts[name]
+		del self.acquired_parts[name] #putain Charles arrête les copier-coller foireux ! :P
 		self.active.remove(name)
 		self.size-=1
 		name.shutdown(1)
@@ -57,7 +57,7 @@ class ActivePool(object):
 	def __str__(self):
 		return(str(self.active))
 	def get_sockCLI(self, id) :
-		nameS = [k for k, v in list(d.items()) if v == id]
+		nameS = [k for k, v in list(self.ID.items()) if v == id]
 		if len(nameS) == 0 :
 			print("problem : unknow id")
 		else :
@@ -194,6 +194,7 @@ class Serveur(object) :
 					pass
 			print("All parts acquired for client N° : "+str(self.poolCLI.ID[clientsock]))
 
+		#~ self.poolCLI.makeInactive(clientsock)
 		self.poolCLI.makeInactive(clientsock)
 
 	def handlerSUB(self,subsock) :
@@ -248,6 +249,8 @@ class Serveur(object) :
 					break
 				out_file.write(results+'\n')
 			out_file.close()
+			clientsock = self.poolCLI.get_sockCLI(ID_cli)
+			self.poolCLI.Parts[clientsock].append(file_addr)
 		self.poolSUB.makeInactive(subsock)
 	
 	

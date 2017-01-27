@@ -6,3 +6,4 @@
 *.ppm
 *.gif
 src/*.o
+client/th.png
