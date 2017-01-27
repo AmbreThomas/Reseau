@@ -174,10 +174,10 @@ def envoyer(params, fenetre):
 			os.system("rm th.png")
         if "all" in params:
 		fichier = open("results.txt", "w")
-		received = add_file(s, 12, "results.txt")
+		received = add_file(s, 12, fichier)
 		i = 1
 		while (received and i < 6):
-		        received = add_file(s, 12, "results.txt")
+		        received = add_file(s, 12, fichier)
 			i += 1
 		fichier.close()
 		if (received):
