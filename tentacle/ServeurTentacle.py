@@ -143,8 +143,13 @@ class Serveur(object) :
 		#chaque part est précédée de l'id_cli et d'un numéro de part.
 		#["id_cli id_part demande",...]
 		if "run" in demande_cli:
-			demande = str(id_client)+' 1 '+ demande_cli
-			return ([demande[:255]], 1)
+			frac_demande = [ str(id_client)+' 1 '+ demande_cli ]
+			frac_demande[-1] = frac_demande[-1][:255]
+		if "all" in demande_cli:
+			frac_demande = []
+			for i in xrange(6):
+				frac_demande.append( str(id_client)+" %d "%(i+1)+ " ".join(demande_cli.split(" ")[:7]) + " %d"%(i+1) )
+				frac_demande[-1] = frac_demande[-1][:255]
 		return(frac_demande, len(frac_demande))
 
 	#gérer la relation client
