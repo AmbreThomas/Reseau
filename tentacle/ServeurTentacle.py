@@ -190,7 +190,7 @@ class Serveur(object) :
 			self.poolCLI.makeInactive(clientsock)
 		else :
 			if len(demande) :
-				print("Client N"+str(ID_CLI)+" demande : %s"%(demande))
+				print("Client N°"+str(ID_CLI)+" demande : %s"%(demande))
 				with self.poolCLI_lock :
 					frac_demande, nb_of_parts = self.fractionne(demande,self.poolCLI.ID[clientsock])
 				with self.Queue_lock :
@@ -222,9 +222,11 @@ class Serveur(object) :
 					else :
 						time.sleep(2)
 						print("loop")
+						clientsock.settimeout(0)
 						try :
 							test = clientsock.recv(1)
 						except :
+							clientsock.settimeout(None)
 							pass
 						else :
 							present = False
