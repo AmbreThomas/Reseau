@@ -184,7 +184,6 @@ def envoyer(params, fenetre):
 			os.system("Rscript phases.R")
 		afficher(2, fenetre2)
 		os.system("rm *.txt")
-		global enregistrer
 		if (not enregistrer):
 			os.system("rm th2.png")
     except socket.error, e:

@@ -181,8 +181,10 @@ class Serveur(object) :
 							try:
 								p_file_addr = self.poolCLI.Parts[clientsock].pop(0)
 							except IndexError:
+								#print "ben ca arrive tout le temps."
 								pass #pas censé arriver avec le lock !
 				if parts_waiting != 0 :
+					print "on envoie la part:",p_file_addr
 					p_file = open(p_file_addr,'r')
 					part = p_file.readlines()
 					p_file.close()
@@ -193,7 +195,7 @@ class Serveur(object) :
 							else:
 								clientsock.sendall(line)
 					except :
-						print('CLI does not receive well')
+						print('Le client ne recoit pas bien...')
 					parts+=1
 				else :
 					time.sleep(2)
@@ -239,7 +241,8 @@ class Serveur(object) :
 				else :
 					ID_cli = int(ID_mission.split(" ")[0])
 					ID_part = int(ID_mission.split(" ")[1])
-					system("mkdir -p TMP_files/CLI"+str(ID_cli))
+					command = "mkdir -p TMP_files/CLI"+str(ID_cli)
+					system(command)
 					rep_addr = "TMP_files/CLI"+str(ID_cli)
 					file_addr = "TMP_files/CLI"+str(ID_cli)+"/PART"+str(ID_part)+".txt"
 					out_file = open(file_addr,'w')
@@ -260,20 +263,24 @@ class Serveur(object) :
 								break
 							out_file.write(results+'\n')
 					out_file.close()
-					if results == "end of job" :
-						with self.poolCLI_lock :
-							clientsock = self.poolCLI.get_sockCLI(ID_cli)
-							self.poolCLI.Parts[clientsock].append(file_addr)
+					if results == "end of job !" :
+						#~ print "des qu'on a le verrou..."
+						#~ with self.poolCLI_lock : #commente parce que sinon, on n'a JAMAIS le verrou.
+						clientsock = self.poolCLI.get_sockCLI(ID_cli)
+						self.poolCLI.Parts[clientsock].append(file_addr)
+						print file_addr,"pret a envoyer."
 					else :
 						break
 		if WorkingComp :
 			with self.poolSUB_lock :
 				self.poolSUB.makeInactive(subsock)
-		print("debug : fin du thread sub")
+		print("debug : Un des sous-traitants a termine.")
 	
 
 if __name__=="__main__":
 	import sys
+	system("rm -rf TMP_files")
+	system("mkdir TMP_files")
 	#if len(sys.argv)<2:
 	#	print("usage : %s <port1>" % (sys.argv[0],))
 	#	sys.exit(-1)
