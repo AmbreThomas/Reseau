@@ -10,6 +10,7 @@ import signal
 from PIL import Image, ImageTk
 import time
 import select
+from gif import *
 
 tentacle_ip = "127.0.0.1"
 
@@ -217,6 +218,14 @@ def envoyer(params, fenetre):
 				os.system("rm *.txt")
 				if (not enregistrer):
 					os.system("rm th2.png")
+		if "explore" in params:
+			#recevoir les fichiers
+			if (received):
+				#lancer le script python
+				afficher(3, fenetre2)
+				os.system("rm *.txt")
+				if (not enregistrer):
+					os.system("rm *.gif")
 	except socket.error, e:
 		print "erreur dans l'appel a une methode de la classe socket : %s"%e
 		sys.exit(1)
@@ -249,6 +258,12 @@ def afficher(nb, fenetre):
 		lab = Label(image = photo)
 		lab.image=photo
 		lab.pack()
+	if (nb == 3):
+		L = 850
+		H = 650
+		fenetre.geometry("%dx%d+"%(L,H) + str(w/2-L/2) + "+"+str(h/2-H/2))
+		path = os.getcwd()
+		image = App(fenetre, path+"/gif_anime.gif")
 	global enregistrer
 	enregistrer = 0
 	Button(fenetre, text="Cliquez ici pour enregistrer l'image", command=enregistrer_image).pack(side = LEFT)
