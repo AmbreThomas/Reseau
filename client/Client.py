@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from Tkinter import *
+from ttk import *
 from tkMessageBox import *
 import sys
 import tkFont
@@ -8,6 +9,7 @@ from numpy import *
 import socket
 import os
 import string
+from tkFileDialog import *
 import signal
 from PIL import Image, ImageTk
 import time
@@ -123,36 +125,37 @@ def ParamRequest(value, fen):
 	fen.destroy()
 	global fenetre2
 	fenetre2 = Tk()
+	fenetre2.iconbitmap("@icone.xbm")
 	h = fenetre2.winfo_screenheight()
 	w = fenetre2.winfo_screenwidth()
 	frame = Frame(fenetre2, borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
 	Label(frame, text = "Merci de rentrer les paramètres de la simulation").pack()
 	global valueD
-	valueD = StringVar() 
-	valueD.set(0.1)
+	valueD = StringVar()
+	valueD.set(1)
 	global valueA0
-	valueA0 = StringVar() 
-	valueA0.set(5)
+	valueA0 = StringVar()
+	valueA0.set(10)
 	global valueiterMax
-	valueiterMax = StringVar() 
+	valueiterMax = StringVar()
 	valueiterMax.set(10000)
 	global valueT
-	valueT = StringVar() 
-	valueT.set(5)
+	valueT = StringVar()
+	valueT.set(100)
 	global valueDmax
-	valueDmax = StringVar() 
-	valueDmax.set(1)
+	valueDmax = StringVar()
+	valueDmax.set(5)
 	global valueDstep
-	valueDstep = StringVar() 
-	valueDstep.set(0.1)
+	valueDstep = StringVar()
+	valueDstep.set(1)
 	global valueNessai
-	valueNessai = StringVar() 
+	valueNessai = StringVar()
 	valueNessai.set(10)
 	global valueLargeur
-	valueLargeur = StringVar() 
+	valueLargeur = StringVar()
 	valueLargeur.set(32)
 	global valueHauteur
-	valueHauteur = StringVar() 
+	valueHauteur = StringVar()
 	valueHauteur.set(32)
 	Label(frame, text = "Hauteur de la boîte", font="bold").pack()
 	EntryHauteur = Entry(frame, textvariable=valueHauteur, width=30).pack()
@@ -220,6 +223,7 @@ def signal_handler(signal, frame):
 def envoyer(params, fenetre):
 	fenetre.destroy()
 	fenetre2=Tk()
+	fenetre2.iconbitmap("@icone.xbm")
 	h = fenetre2.winfo_screenheight()
 	w = fenetre2.winfo_screenwidth()
 	L, H = geoliste(fenetre2.geometry())
@@ -272,6 +276,10 @@ def envoyer(params, fenetre):
 					os.system("rm th2.png")
 		if "explore" in params:
 			compteur = 1;
+			params = params.split(" ")
+			Dmax = int(params[4])
+			Dstep = int(params[5])
+			Nessai = int(params[8])
 			nb_fichiers = 6*Dmax/Dstep*Nessai
 			received = receive_file(s, s.recv(12).lstrip(), 12, 3)
 			while (received and compteur <= nb_fichiers):
@@ -285,7 +293,7 @@ def envoyer(params, fenetre):
 				i = 1
 				j = 1
 				N = 1
-				while (i < nb_fichiers/6 + 1)
+				while (i < nb_fichiers/6 + 1):
 					assembler([i, i+5], j, N)
 					i += 1
 					j += Dstep
@@ -309,6 +317,7 @@ def envoyer(params, fenetre):
 
 def afficher(nb, fenetre):
 	path = os.getcwd()
+	fenetre.iconbitmap("@icone.xbm")
 	h = fenetre.winfo_screenheight()
 	w = fenetre.winfo_screenwidth()
 	fenetre.title('Résultats')
@@ -316,7 +325,7 @@ def afficher(nb, fenetre):
 		L = 480
 		H = 510
 		fenetre.geometry('%dx%d+'%(L, H) + str(w/2-L/2) + '+'+ str(h/2-H/2))
-		monimage = Image.open(path+'/th.png') 
+		monimage = Image.open(path+'/th.png')
 		photo = ImageTk.PhotoImage(monimage)
 		lab = Label(image = photo)
 		lab.image=photo
@@ -325,7 +334,7 @@ def afficher(nb, fenetre):
 		L = 480
 		H = 510
 		fenetre.geometry('%dx%d+'%(L, H) + str(w/2-L/2) + '+' + str(h/2-H/2))
-		monimage = Image.open(path+'/th2.png') 
+		monimage = Image.open(path+'/th2.png')
 		photo = ImageTk.PhotoImage(monimage)
 		lab = Label(image = photo)
 		lab.image=photo
@@ -350,24 +359,28 @@ def clickbutton1(event):
 	global valueRequest
 	ParamRequest(valueRequest.get(), fenetre)
 
+def getdir():
+	rep = askdirectory(title="Choisissez un répertoire")
+
 def main():
 	global fenetre
 	fenetre = Tk()
 	f1 = Frame(fenetre).pack(padx = 1, pady = 1)
 	path = os.getcwd()
+	fenetre.iconbitmap("@icone.xbm")
 	monimage = Image.open(path+"/logo.png")
 	photo = ImageTk.PhotoImage(monimage)
 	lab = Label(image = photo)
 	lab.image = photo
 	lab.pack()
-	fenetre.title('')
+	fenetre.title('Osiris')
 	label = Label(f1, text = "Merci de choisir la requête à envoyer", font = "bold").pack()
 	global valueRequest
 	valueRequest = IntVar()
 	valueRequest.set(1)
-	Radiobutton(f1, text="Realiser une simulation", variable=valueRequest, value=1).pack(anchor=W)
-	Radiobutton(f1, text="Exploration parametrique (T et A0)", variable=valueRequest, value=2).pack(anchor=W)
-	Radiobutton(f1, text="Exploration parametrique (T, A0 et Dmax)", variable=valueRequest, value=3).pack(anchor=W)
+	Radiobutton(f1, text="Realiser une simulation", variable=valueRequest, value=1).pack(anchor=W, padx=(27,8))
+	Radiobutton(f1, text="Exploration parametrique (T et A0)", variable=valueRequest, value=2).pack(anchor=W, padx=(27,8))
+	Radiobutton(f1, text="Exploration parametrique (T, A0 et Dmax)", variable=valueRequest, value=3).pack(anchor=W, padx=(27,8))
 	valider = Button(f1, text="Valider", command=lambda: clickbutton1(1))
 	valider.pack(side = LEFT)
 	Button(f1, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
