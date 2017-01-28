@@ -7,9 +7,12 @@ from time import sleep
 
 def newsubcontractor(i):
 	nom_machine = str(gethostname())+"-"+str(i+1)
-	mkdir(nom_machine)
-	#system("cp main %s/main"%nom_machine)
-	chdir("%s"%nom_machine)
+	try:
+		mkdir(nom_machine)
+	except OSError:
+		pass
+	system("cp main %s/main"%nom_machine)
+	chdir(nom_machine)
 	s = socket(AF_INET, SOCK_STREAM)
 	s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 	print "Sous-traitant %s disponible."%nom_machine

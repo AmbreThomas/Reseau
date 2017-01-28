@@ -43,12 +43,14 @@ def find_tentacle(timeout = 15) :
 tentacle_ip = find_tentacle()
 
 def heatphases(D, N, resolT, resolA):
+	plt.clf()
+	plt.cla()
 	ncol = 1500/resolT
 	nrow = 51/resolA
 	data = []
 	print "\nouverture de %d fichiers..."%N
 	for i in xrange(1,N+1):
-		file_list = open("essai%d/results-D%d.txt"%(i, D))
+		file_list = open("essai%d/results-D%d.txt"%(i, D), "r")
 		data.append(file_list.readlines())
 		file_list.close()
 	matrix = zeros((nrow+1, ncol+1))
@@ -88,7 +90,7 @@ def assembler(liste, nom, dossier):
 	fichier = open("essai"+str(dossier)+"/results-D"+str(nom)+".txt", "w")
 	for i in range (liste[0], liste[1] + 1):
 		ecrire = open(str(i)+".txt", "r")
-		fichier.writelines(ecrire.readlines())
+		fichier.writelines(ecrire.readlines()[:-1])
 		ecrire.close()
 	fichier.close()
 
@@ -148,7 +150,7 @@ def ParamRequest(value, fen):
 	fen.destroy()
 	global fenetre2
 	fenetre2 = Tk()
-	fenetre2.iconbitmap("@icone.xbm")
+	fenetre2.iconbitmap("@../icone.xbm")
 	h = fenetre2.winfo_screenheight()
 	w = fenetre2.winfo_screenwidth()
 	frame = Frame(fenetre2, borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
@@ -246,7 +248,7 @@ def signal_handler(signal, frame):
 def envoyer(params, fenetre):
 	fenetre.destroy()
 	fenetre2=Tk()
-	fenetre2.iconbitmap("@icone.xbm")
+	fenetre2.iconbitmap("@../icone.xbm")
 	h = fenetre2.winfo_screenheight()
 	w = fenetre2.winfo_screenwidth()
 	L, H = geoliste(fenetre2.geometry())
@@ -298,16 +300,16 @@ def envoyer(params, fenetre):
 				if (not enregistrer):
 					os.system("rm th2.png")
 		if "explore" in params:
-			compteur = 1;
+			compteur = 0;
 			params = params.split(" ")
 			Dmax = int(params[4])
 			Dstep = int(params[5])
 			Nessai = int(params[8])
 			nb_fichiers = 6*Dmax/Dstep*Nessai
 			received = receive_file(s, s.recv(12).lstrip(), 12, 3)
-			while (received and compteur <= nb_fichiers):
-				compteur += 1
+			while (received and compteur < nb_fichiers - 1):
 				received = receive_file(s, s.recv(12).lstrip(), 12, 3)
+				compteur += 1
 			if (received):
 				#creer les dossiers
 				for i in range (0, Nessai):
@@ -323,7 +325,10 @@ def envoyer(params, fenetre):
 					if (j > Dmax):
 						j = 1
 						N += 1
-				#lancer le script python
+				os.system("rm *.txt")
+				for D in range(1, 1+Dmax, Dstep):
+					heatphases(D, Nessai, int(params[6]), int(params[7]))
+				os.system("convert -delay 100 -loop 0 *.png phases-3D-logscale.gif")
 				afficher(3, fenetre2)
 				for i in range (0, Nessai):
 					os.system("rm -rf essai"+str(i+1))
@@ -340,7 +345,7 @@ def envoyer(params, fenetre):
 
 def afficher(nb, fenetre):
 	path = os.getcwd()
-	fenetre.iconbitmap("@icone.xbm")
+	fenetre.iconbitmap("@../icone.xbm")
 	h = fenetre.winfo_screenheight()
 	w = fenetre.winfo_screenwidth()
 	fenetre.title('Résultats')
@@ -367,11 +372,11 @@ def afficher(nb, fenetre):
 		H = 650
 		fenetre.geometry("%dx%d+"%(L,H) + str(w/2-L/2) + "+"+str(h/2-H/2))
 		path = os.getcwd()
-		image = App(fenetre, path+"/gif_anime.gif")
+		image = App(fenetre, path+"/phases-3D-logscale.gif")
 	global enregistrer
 	enregistrer = 0
 	Button(fenetre, text="Cliquez ici pour enregistrer l'image", command=enregistrer_image).pack(side = LEFT)
-	Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
+	Button(fenetre, text="Fermer", command=fenetre.quit).pack(side = RIGHT)
 	fenetre.mainloop()
 
 def enregistrer_image():
@@ -390,14 +395,14 @@ def main():
 	fenetre = Tk()
 	f1 = Frame(fenetre).pack(padx = 1, pady = 1)
 	path = os.getcwd()
-	fenetre.iconbitmap("@icone.xbm")
-	monimage = Image.open(path+"/logo.png")
+	fenetre.iconbitmap("@../icone.xbm")
+	monimage = Image.open(path+"/../logo.png")
 	photo = ImageTk.PhotoImage(monimage)
 	lab = Label(image = photo)
 	lab.image = photo
 	lab.pack()
 	fenetre.title('Osiris')
-	label = Label(f1, text = "Merci de choisir la requête à envoyer", font = "bold").pack()
+	label = Label(f1, text = "Merci de choisir la requête à envoyer", style="BW.TLabel", font = "bold").pack()
 	global valueRequest
 	valueRequest = IntVar()
 	valueRequest.set(1)

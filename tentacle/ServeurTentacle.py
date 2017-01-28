@@ -218,7 +218,6 @@ class Serveur(object) :
 						parts+=1
 					else :
 						time.sleep(2)
-						print("loop")
 						clientsock.settimeout(0)
 						try :
 							test = clientsock.recv(1)
@@ -351,11 +350,5 @@ class Serveur(object) :
 
 
 if __name__=="__main__":
-	import sys
-	system("rm -rf TMP_files")
-	system("mkdir TMP_files")
-	#if len(sys.argv)<2:
-	#	print("usage : %s <port1>" % (sys.argv[0],))
-	#	sys.exit(-1)
 	signal.signal(signal.SIGINT, signal_handler_stop) #1er CTRL+C gère arrêt écoute, 2e gère arrêt clients.
 	Serveur()
