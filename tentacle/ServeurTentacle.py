@@ -222,10 +222,8 @@ class Serveur(object) :
 				try :
 					subsock.recv(1)
 				except :
-					print(" pass")
 					pass
 				else :
-					print("indexerror non mais deco")
 					print("Déconnexion du sous-traitant N "+ID_SUB)
 					with self.Queue_lock :
 						self.Queue = [request] + self.Queue
