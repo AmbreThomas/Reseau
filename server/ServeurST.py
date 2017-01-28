@@ -43,7 +43,7 @@ def newsubcontractor(i):
 				system("rm -f *.txt *.gif")
 			if "all" in received:
 				send_file(s, "results.txt", 12)
-				#system("rm -f results.txt")
+				system("rm -f results.txt")
 			if "explore3D" in received:
 				send_file(s, "results.txt", 12)
 				system("rm -f results.txt")

@@ -2,6 +2,7 @@
 from Tkinter import *
 from tkMessageBox import *
 import sys
+import tkFont
 import socket
 import os
 import string
@@ -56,91 +57,107 @@ def add_file(newSocket, max_size, fichier):
 	fichier.writelines(output[:-1])
 	return r
 
+def clickvalue1(event):
+	envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get()+" 0", fenetre2)
+
+def clickvalue2(event):
+	envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueT.get()+" "+valueA0.get(), fenetre2)
+
+def clickvalue3(event):
+	envoyer("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueNessai.get(), fenetre2)
+
 def ParamRequest(value, fen):
 	fen.destroy()
+	global fenetre2
 	fenetre2 = Tk()
 	h = fenetre2.winfo_screenheight()
 	w = fenetre2.winfo_screenwidth()
 	frame = Frame(fenetre2, borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
 	Label(frame, text = "Merci de rentrer les paramètres de la simulation").pack()
+	global valueD
+	valueD = StringVar() 
+	valueD.set(0.1)
+	global valueA0
+	valueA0 = StringVar() 
+	valueA0.set(5)
+	global valueiterMax
+	valueiterMax = StringVar() 
+	valueiterMax.set(10000)
+	global valueT
+	valueT = StringVar() 
+	valueT.set(5)
+	global valueDmax
+	valueDmax = StringVar() 
+	valueDmax.set(1)
+	global valueDstep
+	valueDstep = StringVar() 
+	valueDstep.set(0.1)
+	global valueNessai
+	valueNessai = StringVar() 
+	valueNessai.set(10)
+	global valueLargeur
 	valueLargeur = StringVar() 
 	valueLargeur.set(32)
+	global valueHauteur
 	valueHauteur = StringVar() 
 	valueHauteur.set(32)
-	Label(frame, text = "Hauteur de la boîte").pack()
+	Label(frame, text = "Hauteur de la boîte", font="bold").pack()
 	EntryHauteur = Entry(frame, textvariable=valueHauteur, width=30).pack()
-	Label(frame, text = "Largeur de la boîte").pack()
+	Label(frame, text = "Largeur de la boîte", font="bold").pack()
 	EntryLargeur = Entry(frame, textvariable=valueLargeur, width=30).pack()
 	if value == 1:
 			fenetre2.title("Realiser une simulation")
-			valueD = StringVar()
-			valueD.set(0.1)
-			valueA0 = StringVar() 
-			valueA0.set(20)
-			valueT = StringVar() 
-			valueT.set(500)
-			valueiterMax = StringVar() 
-			valueiterMax.set(10000)
-			Label(frame, text = "Valeur du coefficient de diffusion").pack()
+			Label(frame, text = "Coefficient de diffusion", font="bold").pack()
 			EntryD = Entry(frame, textvariable=valueD, width=30).pack()
-			Label(frame, text = "Valeur de la concentration initiale en glucose").pack()
+			Label(frame, text = "Concentration initiale en glucose", font="bold").pack()
 			EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
-			Label(frame, text = "Intervalle de temps entre les repiquages").pack()
+			Label(frame, text = "Pas de temps entre les repiquages", font="bold").pack()
 			EntryT = Entry(frame, textvariable=valueT, width=30).pack()
-			Label(frame, text = "Durée de l'expérience").pack()
+			Label(frame, text = "Durée de l'expérience", font="bold").pack()
 			EntryiterMax = Entry(frame, textvariable=valueiterMax, width=30).pack()
-			Button(fenetre2, text="Valider", command=lambda: envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get()+" 0", fenetre2)).pack(side = LEFT)
+			bvalue1 = Button(fenetre2, text="Valider", command=lambda: clickvalue1(1))
+			bvalue1.pack(side = LEFT)
+			bvalue1.focus_set()
+			bvalue1.bind('<Return>', clickvalue1)
 			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
 			L = 300
-			H = 280
+			H = 305
 			fenetre2.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
 	elif value == 2:
 			fenetre2.title("Exploration parametrique (T et A0)")
-			valueD = StringVar() 
-			valueD.set(0.1)
-			valueA0 = StringVar() 
-			valueA0.set(5)
-			valueT = StringVar() 
-			valueT.set(5)
-			valuezone = StringVar() 
-			valuezone.set("???")
-			Label(frame, text = "Valeur du coefficient de diffusion").pack()
+			Label(frame, text = "Coefficient de diffusion", font="bold").pack()
 			EntryD = Entry(frame, textvariable=valueD, width=30).pack()
-			Label(frame, text = "Intervalle de concentration en glucose à tester(entre 0 et 50)").pack()
+			Label(frame, text = "Pas des concentrations en glucose (entre 0 et 50)", font="bold").pack()
 			EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
-			Label(frame, text = "Intervalle de temps entre les repiquages à tester (entre 1 et 1500)").pack()
+			Label(frame, text = "Pas de temps entre les repiquages (entre 1 et 1500)", font="bold").pack()
 			EntryT = Entry(frame, textvariable=valueT, width=30).pack()
-			Button(fenetre2, text="Valider", command=lambda: envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueT.get()+" "+valueA0.get(), fenetre2)).pack(side = LEFT)
+			bvalue2 = Button(fenetre2, text="Valider", command=lambda: clickvalue2(1))
+			bvalue2.pack(side = LEFT)
+			bvalue2.focus_set()
+			bvalue2.bind('<Return>', clickvalue2)
 			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
-			L = 410
-			H = 245
+			L = 420
+			H = 265
 			fenetre2.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
 	elif value == 3:
 			fenetre2.title("Exploration parametrique (T, A0 et Dmax)")
-			valueDmax = StringVar() 
-			valueDmax.set(1)
-			valueDstep = StringVar() 
-			valueDstep.set(0.1)
-			valueA0 = StringVar() 
-			valueA0.set(5)
-			valueT = StringVar() 
-			valueT.set(5)
-			valueNessai = StringVar() 
-			valueNessai.set(10)
-			Label(frame, text = "Valeur du coefficient de diffusion maximum").pack()
+			Label(frame, text = "Coefficient de diffusion maximum", font="bold").pack()
 			EntryDmax = Entry(frame, textvariable=valueDmax, width=30).pack()
-			Label(frame, text = "Intervalle des coefficients de diffusion à tester").pack()
+			Label(frame, text = "Pas des coefficients de diffusion", font="bold").pack()
 			EntryDstep = Entry(frame, textvariable=valueDstep, width=30).pack()
-			Label(frame, text = "Intervalle de concentration en glucose à tester").pack()
+			Label(frame, text = "Pas des concentrations en glucose", font="bold").pack()
 			EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
-			Label(frame, text = "Intervalle de temps entre les repiquages à tester").pack()
+			Label(frame, text = "Pas de temps entre les repiquages", font="bold").pack()
 			EntryT = Entry(frame, textvariable=valueT, width=30).pack()
-			Label(frame, text = "Nombres d'essais à réaliser").pack()
+			Label(frame, text = "Nombres d'essais à réaliser", font="bold").pack()
 			EntryNessai = Entry(frame, textvariable=valueNessai, width=30).pack()
-			Button(fenetre2, text="Valider", command=lambda: envoyer("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueNessai.get(), fenetre2)).pack(side = LEFT)
+			bvalue3 = Button(fenetre2, text="Valider", command=lambda: clickvalue3(1))
+			bvalue3.pack(side = LEFT)
+			bvalue3.focus_set()
+			bvalue3.bind('<Return>', clickvalue3)
 			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
-			L = 300
-			H = 320
+			L = 380
+			H = 350
 			fenetre2.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
 	return;
 
@@ -257,7 +274,7 @@ def main():
 	lab.image = photo
 	lab.pack()
 	fenetre.title('')
-	label = Label(f1, text = "Merci de choisir la requête à envoyer").pack()
+	label = Label(f1, text = "Merci de choisir la requête à envoyer", font = "bold").pack()
 	global valueRequest
 	valueRequest = IntVar()
 	valueRequest.set(1)
@@ -267,11 +284,10 @@ def main():
 	valider = Button(f1, text="Valider", command=lambda: clickbutton1(1))
 	valider.pack(side = LEFT)
 	Button(f1, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
-	L, H = geoliste(fenetre.geometry())
 	h = fenetre.winfo_screenheight()
 	w = fenetre.winfo_screenwidth()
 	L = 350
-	H = 180
+	H = 185
 	valider.focus_set()
 	valider.bind('<Return>', clickbutton1)
 	fenetre.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
