@@ -59,6 +59,8 @@ def add_file(newSocket, max_size, fichier):
 def ParamRequest(value, fen):
 	fen.destroy()
 	fenetre2 = Tk()
+	h = fenetre2.winfo_screenheight()
+	w = fenetre2.winfo_screenwidth()
 	frame = Frame(fenetre2, borderwidth=2, relief=GROOVE).pack(padx=1, pady=1)
 	Label(frame, text = "Merci de rentrer les paramètres de la simulation").pack()
 	valueLargeur = StringVar() 
@@ -89,6 +91,9 @@ def ParamRequest(value, fen):
 			EntryiterMax = Entry(frame, textvariable=valueiterMax, width=30).pack()
 			Button(fenetre2, text="Valider", command=lambda: envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get()+" 0", fenetre2)).pack(side = LEFT)
 			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
+			L = 300
+			H = 280
+			fenetre2.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
 	elif value == 2:
 			fenetre2.title("Exploration parametrique (T et A0)")
 			valueD = StringVar() 
@@ -107,6 +112,9 @@ def ParamRequest(value, fen):
 			EntryT = Entry(frame, textvariable=valueT, width=30).pack()
 			Button(fenetre2, text="Valider", command=lambda: envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get(), fenetre2)).pack(side = LEFT)
 			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
+			L = 410
+			H = 245
+			fenetre2.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
 	elif value == 3:
 			fenetre2.title("Exploration parametrique (T, A0 et Dmax)")
 			valueDmax = StringVar() 
@@ -131,6 +139,9 @@ def ParamRequest(value, fen):
 			EntryNessai = Entry(frame, textvariable=valueNessai, width=30).pack()
 			Button(fenetre2, text="Valider", command=lambda: envoyer("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueNessai.get(), fenetre2)).pack(side = LEFT)
 			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
+			L = 300
+			H = 320
+			fenetre2.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
 	return;
 
 def signal_handler(signal, frame):
@@ -243,17 +254,16 @@ def main():
 	Radiobutton(f1, text="Realiser une simulation", variable=valueRequest, value=1).pack(anchor=W)
 	Radiobutton(f1, text="Exploration parametrique (T et A0)", variable=valueRequest, value=2).pack(anchor=W)
 	Radiobutton(f1, text="Exploration parametrique (T, A0 et Dmax)", variable=valueRequest, value=3).pack(anchor=W)
-	valider = Button(f1, text="Valider")
+	valider = Button(f1, text="Valider", command=lambda: clickbutton1(1))
 	valider.pack(side = LEFT)
 	Button(f1, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
 	L, H = geoliste(fenetre.geometry())
 	h = fenetre.winfo_screenheight()
 	w = fenetre.winfo_screenwidth()
 	L = 350
-	H = 150
+	H = 180
 	valider.focus_set()
 	valider.bind('<Return>', clickbutton1)
-	valider.bind("<Button-1>", clickbutton1)
 	fenetre.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
 	fenetre.mainloop()
 
