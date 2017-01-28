@@ -1,18 +1,19 @@
 from socket import *
 from sys import argv
 from multiprocessing import *
-from os import system, chdir
+from os import system, chdir, getcwd, getpid, listdir, mkdir
 from time import sleep
 
 tentacle_ip = "134.214.158.232"
 
 def newsubcontractor(i):
-	system("mkdir -p %d"%i)
-	system("cp main %d/main"%i)
-	chdir("%d"%i)
+	nom_machine = str(gethostname())+"-"+str(i+1)
+	mkdir(nom_machine)
+	#system("cp main %s/main"%nom_machine)
+	chdir("%s"%nom_machine)
 	s = socket(AF_INET, SOCK_STREAM)
 	s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-	print "Sous-traitant %d disponible."%(i+1)
+	print "Sous-traitant %s disponible."%nom_machine
 	s.connect( (tentacle_ip, 6666) )
 	s.sendall("work")
 	print s.recv(20)
@@ -23,7 +24,7 @@ def newsubcontractor(i):
 			jobID = " ".join(received.split(" ")[:2])
 			received = " ".join(received.split(" ")[2:])
 			args = received.split(" ")
-			print "recu sur la machine %d: "%(i+1),received,"(job ID :",jobID,")"
+			print "recu sur la machine %s: "%nom_machine,received,"(job ID :",jobID,")"
 			system(received)
 			while len(jobID)<12:
 				jobID = jobID+" "
@@ -51,7 +52,7 @@ def newsubcontractor(i):
 			print "==> One job completed.\n"
 
 def normalize_file(filename, size):
-	fichier = open(filename, "r")
+	fichier = open(getcwd()+"/"+filename, "r")
 	data = fichier.readlines()
 	fichier.close()
 	for i in xrange(len(data)):
@@ -80,12 +81,12 @@ def send_file(target_sock, filename, max_size):
 	target_sock.sendall(endstring)
 
 if __name__ == '__main__':
+	
 	chdir("src")
 	system("make")
 	chdir("..")
 	jobs = []
 	for i in range(cpu_count()):
-		system("rm -rf %d"%i)
 		p = Process(target=newsubcontractor, args=(i,))
 		jobs.append(p)
 		p.start()

@@ -158,8 +158,6 @@ class Serveur(object) :
 			Nessais = int(args[8])
 			Dmax = int(args[4]) # de 10^(-1) à 10^(-Dmax)
 			Dstep = int(args[5])
-			print Nessais,"essais","Dmax=",Dmax,"Dstep=",Dstep,"soit",6*Dmax/Dstep*Nessais,"jobs au total"
-			print args
 			compteur = 0
 			for essai in range(1,1+Nessais):
 				for D in range(1, 1+Dmax, Dstep):
@@ -172,7 +170,6 @@ class Serveur(object) :
 					for zone in xrange(1,7):
 						compteur += 1
 						demande = "./main all "+" ".join(args[2:4])+" "+D_str+" "+" ".join(args[6:8])
-						print "job ",str(id_client)+" %d "%(compteur), demande
 						frac_demande.append( str(id_client)+" %d "%(compteur)+ demande + " %d"%(zone) )
 						frac_demande[-1] = frac_demande[-1][:255]
 					
@@ -241,7 +238,7 @@ class Serveur(object) :
 			try:
 				with self.Queue_lock :
 					request = self.Queue.pop(0)
-			except IndexError:	
+			except IndexError:
 				subsock.settimeout(0)
 				try :
 					subsock.recv(1)
@@ -282,7 +279,11 @@ class Serveur(object) :
 					system(command)
 					rep_addr = "TMP_files/CLI"+str(ID_cli)
 					file_addr = "TMP_files/CLI"+str(ID_cli)+"/PART"+str(ID_part)+".txt"
+					file_name = str(ID_part)+".txt"
+					while len(file_name)<12:
+						file_name = " " + file_name 
 					out_file = open(file_addr,'w')
+					out_file.write(file_name+'\n')
 					results = "" 
 					while WorkingComp:
 						try :
@@ -290,7 +291,7 @@ class Serveur(object) :
 						except :
 							print("Déconnexion du sous-traitant N "+ID_SUB)
 							with self.Queue_lock :
-								self.Queue_lock = [request] + self.Queue_lock
+								self.Queue = [request] + self.Queue
 							out_file.close()
 							with self.poolSUB_lock :
 								self.poolSUB.makeInactive(subsock)
