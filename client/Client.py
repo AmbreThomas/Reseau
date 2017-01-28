@@ -250,6 +250,12 @@ def main():
 	global fenetre
 	fenetre = Tk()
 	f1 = Frame(fenetre).pack(padx = 1, pady = 1)
+	path = os.getcwd()
+	monimage = Image.open(path+"/logo.png")
+	photo = ImageTk.PhotoImage(monimage)
+	lab = Label(image = photo)
+	lab.image = photo
+	lab.pack()
 	fenetre.title('')
 	label = Label(f1, text = "Merci de choisir la requête à envoyer").pack()
 	global valueRequest
