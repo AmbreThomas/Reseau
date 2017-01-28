@@ -54,14 +54,6 @@ void explore_params(int W, int H, double& D, int Amin, int Amax, int resolT, int
       f << not Petri.isAlive() << Petri.isFixed() << endl;
       f.close();
 
-      //~ cout << "Azero: " << Azero << " ; T: " << T << " ";
-      //~ if (not(Petri.isAlive())) cout << " >> Mort des deux souches.";
-      //~ if (Petri.isFixed()) cout << " >> Fixation de la souche A";
-      //~ if (Petri.isAlive() and not Petri.isFixed()){
-        //~ cout << " >> Cohabitation !";
-      //~ }
-      //~ cout << endl;
-
     }
   }
 }
