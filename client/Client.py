@@ -16,12 +16,35 @@ import time
 import select
 from gif import *
 
-tentacle_ip = "134.214.158.232"
+def find_tentacle(timeout = 15) :
+	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+	s.bind(('', 6664))
+	s.sendto("test", (('<broadcast>',6667)))
+	t = 0
+	s.settimeout(0.1)
+	while t < timeout :
+		s.sendto("test", (('<broadcast>',6667)))
+		try :
+			message, addr = s.recvfrom(8149)
+		except :
+			sleep(1)
+			t+=1
+		else :
+			print "L'adresse du serveur est : ", addr[0]
+			print "Message du serveur : ", message
+			s.close()
+			return(addr[0])
+	print(str(timeout)+" secondes écoulées... Aucun serveur ne semble disponible.")
+	s.close()
+	return(0)
+
+tentacle_ip = find_tentacle()
 
 def heatphases(D, N, resolT, resolA):
 	ncol = 1500/resolT
 	nrow = 51/resolA
-#=================== Parsing files =====================================
 	data = []
 	print "\nouverture de %d fichiers..."%N
 	for i in xrange(1,N+1):

@@ -22,7 +22,7 @@ def signal_handler_stop(signal, frame):
 		print('The subcontractors stop working (Ctrl+C)')
 		WorkingComp = False #pour arrêt des thread. #essayer exemple minimal...
 	if WorkingServ :
-		print('We do not accept new clients anymore (Ctrl+C)')
+		print('\nWe do not accept new clients anymore (Ctrl+C)')
 		WorkingServ = False #pour arrêt de l'écoute
 
 #sauvegarde de socket et suivi de leur activité.
@@ -59,7 +59,6 @@ class ActivePool(object):
 	def get_sockCLI(self, id) :
 		nameS = [k for k, v in list(self.ID.items()) if v == id]
 		if len(nameS) == 0 :
-			print("problem : unknow id")
 			return(-1)
 		else :
 			return(nameS[0])
@@ -67,8 +66,6 @@ class ActivePool(object):
 		return(self.size)
 	def get_nb_of_disponible_parts(self,name) :
 		return(len(self.Parts[name]))
-#	def get_acquired_parts(selfn,name) :
-#		return(self.Parts[name])
 	def close(self) :
 		for so in self.active :
 			so.shutdown(1)
@@ -83,12 +80,14 @@ class Serveur(object) :
 		except :
 			pass
 		self.port1 = 6666
+		self.port_b = 6667
 		## gestion de l'arrêt
 		global WorkingServ
 		WorkingServ = True
 		global WorkingComp
 		WorkingComp = True
-
+		broad_thread = threading.Thread(target = self.broadcasting, args=[self.port_b])
+		broad_thread.start()
 		## gestion des connexions (multiples)
 		self.AllThreadCLI = []
 		self.AllThreadSUB = []
@@ -106,7 +105,6 @@ class Serveur(object) :
 		sock.bind(('',int(self.port1)))
 		sock.listen(20)
 		print('Listening on port %s'%self.port1)
-		print ""
 
 		while WorkingServ :
 			readable = []
@@ -117,7 +115,7 @@ class Serveur(object) :
 				mysocket, myaddr = s.accept()
 				statut = mysocket.recv(4)
 				if "ask " == statut :
-					print('\nUn client se connecte : %s:%d' % myaddr)
+					print('Un client se connecte : %s:%d' % myaddr)
 					t = threading.Thread(target=self.handlerCLI, args=[mysocket])
 					self.AllThreadCLI.append(t)
 					t.start()
@@ -185,46 +183,57 @@ class Serveur(object) :
 		try :
 			demande = clientsock.recv(255)
 		except :
-			print("Client N " +str(ID_CLI) +" parti sans demander son reste")
+			print("Client N " +str(ID_CLI) +" parti sans demander son reste.")
+			self.poolCLI.makeInactive(clientsock)
 		else :
-			print("Client N"+str(ID_CLI)+" demande : %s"%(demande))
-			with self.poolCLI_lock :
-				frac_demande, nb_of_parts = self.fractionne(demande,self.poolCLI.ID[clientsock])
-			with self.Queue_lock :
-				self.Queue.extend(frac_demande)
-			#réception des résultats
-			parts = 0
-			while WorkingComp and parts < nb_of_parts :
+			if len(demande) :
+				print("Client N°"+str(ID_CLI)+" demande : %s"%(demande))
 				with self.poolCLI_lock :
-					parts_waiting = self.poolCLI.get_nb_of_disponible_parts(clientsock)
-					if  parts_waiting != 0 :
-						p_file_addr = ""
-						while WorkingComp and p_file_addr == "":
-							try:
-								p_file_addr = self.poolCLI.Parts[clientsock].pop(0)
-							except IndexError:
-								print "Index Error"
-								pass #pas censé arriver avec le lock !
-				if parts_waiting != 0 :
-					print "On envoie le fichier : ",p_file_addr, " au client N ", str(ID_CLI)
-					p_file = open(p_file_addr,'r')
-					part = p_file.readlines()
-					p_file.close()
-					try :
-						for line in part:
-							if len(line)>1:
-								clientsock.sendall(line[:-1])
-							else:
-								clientsock.sendall(line)
-					except :
-						print('Déconnexion du client N '+str(ID_CLI))
-						
-					parts+=1
-				else :
-					time.sleep(2)
-					pass
-			if parts == nb_of_parts :
-				print("Client N°"+str(ID_CLI)+" satisfait avec succès")
+					frac_demande, nb_of_parts = self.fractionne(demande,self.poolCLI.ID[clientsock])
+				with self.Queue_lock :
+					self.Queue.extend(frac_demande)
+				#réception des résultats
+				parts = 0
+				present = True
+				while WorkingComp and parts < nb_of_parts and present :
+					with self.poolCLI_lock :
+						parts_waiting = self.poolCLI.get_nb_of_disponible_parts(clientsock)
+						if  parts_waiting != 0 :
+							p_file_addr = self.poolCLI.Parts[clientsock].pop(0)
+					if parts_waiting != 0 :
+						print "On envoie le fichier : ",p_file_addr, " au client N°", str(ID_CLI)
+						p_file = open(p_file_addr,'r')
+						part = p_file.readlines()
+						p_file.close()
+						try :
+							for line in part:
+								if len(line)>1:
+									clientsock.sendall(line[:-1])
+								else:
+									clientsock.sendall(line)
+						except :
+							print('Déconnexion du client N '+str(ID_CLI))
+							self.poolCLI.makeInactive(clientsock)
+							break
+						parts+=1
+					else :
+						time.sleep(2)
+						print("loop")
+						clientsock.settimeout(0)
+						try :
+							test = clientsock.recv(1)
+						except :
+							clientsock.settimeout(None)
+							pass
+						else :
+							present = False
+							print('Déconnexion du client N°'+str(ID_CLI))
+							self.poolCLI.makeInactive(clientsock)
+				if parts == nb_of_parts :
+					print("Client N°"+str(ID_CLI)+" satisfait avec succès")
+					self.poolCLI.makeInactive(clientsock)
+			else :
+				print("Client N°" +str(ID_CLI) +" parti sans demander son reste.")
 				self.poolCLI.makeInactive(clientsock)
 
 	def handlerSUB(self,subsock) :
@@ -272,7 +281,7 @@ class Serveur(object) :
 					with self.poolSUB_lock :
 						self.poolSUB.makeInactive(subsock)
 					break
-				if len(ID_mission) != 0 :
+				if len(ID_mission) > 2 :
 					ID_cli = int(ID_mission.split(" ")[0])
 					ID_part = int(ID_mission.split(" ")[1])
 					command = "mkdir -p TMP_files/CLI"+str(ID_cli)
@@ -307,18 +316,39 @@ class Serveur(object) :
 							try :
 								self.poolCLI_lock.acquire(0)
 							except :
-								print('poolCLI_lock indisponible') #espéré inutile.
+								print('poolCLI_lock indisponible') #espéré inutile. jamais vu
 								time.sleep(1)
 							else :
 								clientsock = self.poolCLI.get_sockCLI(ID_cli)
-								self.poolCLI.Parts[clientsock].append(file_addr)
-								self.poolCLI_lock.release()
-								registered = True
-						print file_addr,"pret a envoyer au client",str(ID_cli)
+								if clientsock >=0:
+									self.poolCLI.Parts[clientsock].append(file_addr)
+									self.poolCLI_lock.release()
+									registered = True
+									print file_addr," prêt a être envoyé au client N°",str(ID_cli)
+								else :
+									print("debug : the client was gone")
+									self.poolCLI_lock.release()
+									break
 					else :
 						break
-		print("debug : Un des sous-traitants a termine.")
+
+	def broadcasting(self,port_b) :
+		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+		s.bind(('', port_b))
+		s.settimeout(0.1)
+		print "Ecoute broadcast sur le port ", port_b,"\n"
+		global WorkingServ
+		while WorkingServ:
+			try:
+				message, address = s.recvfrom(10)
+				#print "Partenaire nous recherchant : ",address
+				s.sendto("Le serveur Tentacule tourne à merveille. Envoyez votre requête.",address)
+			except :
+				pass	
 	
+
 
 if __name__=="__main__":
 	import sys

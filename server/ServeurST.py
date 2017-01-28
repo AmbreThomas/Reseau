@@ -1,10 +1,9 @@
+# -*- coding: utf-8 -*-
 from socket import *
 from sys import argv
 from multiprocessing import *
 from os import system, chdir, getcwd, getpid, listdir, mkdir
 from time import sleep
-
-tentacle_ip = "134.214.158.232"
 
 def newsubcontractor(i):
 	nom_machine = str(gethostname())+"-"+str(i+1)
@@ -80,16 +79,42 @@ def send_file(target_sock, filename, max_size):
 		endstring = endstring + "."
 	target_sock.sendall(endstring)
 
+def find_tentacle(timeout = 15) :
+	s = socket(AF_INET, SOCK_DGRAM)
+	s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+	s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+	s.bind(('', 6665))
+	s.sendto("test", (('<broadcast>',6667)))
+	t = 0
+	s.settimeout(0.1)
+	while t < timeout :
+		s.sendto("test", (('<broadcast>',6667)))
+		try :
+			message, addr = s.recvfrom(8149)
+		except :
+			sleep(1)
+			t+=1
+		else :
+			print "L'adresse du serveur est : ", addr[0]
+			print "Message du serveur : ", message
+			s.close()
+			return(addr[0])
+	print(str(timeout)+" secondes écoulées... Aucun serveur ne semble disponible.")
+	s.close()
+	return(0)
+
 if __name__ == '__main__':
 	
 	chdir("src")
 	system("make")
 	chdir("..")
 	jobs = []
-	for i in range(cpu_count()):
-		p = Process(target=newsubcontractor, args=(i,))
-		jobs.append(p)
-		p.start()
+	tentacle_ip = find_tentacle()
+	if tentacle_ip :
+		for i in range(cpu_count()):
+			p = Process(target=newsubcontractor, args=(i,))
+			jobs.append(p)
+			p.start()
 
 
 
