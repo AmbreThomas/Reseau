@@ -10,7 +10,7 @@ from PIL import Image, ImageTk
 import time
 import select
 
-tentacle_ip = "127.0.0.1"
+tentacle_ip = "134.214.158.232"
 
 def geoliste(g):
 	r = [i for i in range (0, len(g)) if not g[i].isdigit()]
@@ -21,10 +21,10 @@ def clean_file(filename):
 	data = fichier.readlines()
 	fichier.close()
 	for i in xrange(len(data)):
-		while data[i][0] == '0' and len(data[i]) > 2:
+		while data[i][0] == '#':
 			data[i] = data[i][1:]
 	fichier = open(filename, "w")
-	fichier.writelines(data[:-2]+['\n'])
+	fichier.writelines(data[:-1]+['\n'])
 	fichier.close()
 
 def receive_file(newSocket, filename, max_size):
@@ -44,7 +44,7 @@ def receive_file(newSocket, filename, max_size):
 	return r
 
 def add_file(newSocket, max_size, fichier):
-	print "reception de fichier..."
+	print "reception de donnees..."
 	r = ""
 	output = []
 	while "fin." not in r:
@@ -53,7 +53,7 @@ def add_file(newSocket, max_size, fichier):
 			r = r + newSocket.recv(max_size - len(r))
 		output.append(r+'\n')
 		if not r: break
-	fichier.writelines(output)
+	fichier.writelines(output[:-1])
 	return r
 
 def ParamRequest(value, fen):
@@ -110,7 +110,7 @@ def ParamRequest(value, fen):
 			EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
 			Label(frame, text = "Intervalle de temps entre les repiquages à tester (entre 1 et 1500)").pack()
 			EntryT = Entry(frame, textvariable=valueT, width=30).pack()
-			Button(fenetre2, text="Valider", command=lambda: envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get(), fenetre2)).pack(side = LEFT)
+			Button(fenetre2, text="Valider", command=lambda: envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueT.get()+" "+valueA0.get(), fenetre2)).pack(side = LEFT)
 			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
 			L = 410
 			H = 245
@@ -193,7 +193,7 @@ def envoyer(params, fenetre):
 				received = add_file(s, 12, fichier)
 				i += 1
 			fichier.close()
-			clean_file(fichier)
+			clean_file("results.txt")
 			if (received):
 				os.system("Rscript phases.R")
 				afficher(2, fenetre2)
