@@ -18,7 +18,15 @@ def geoliste(g):
 	r = [i for i in range (0, len(g)) if not g[i].isdigit()]
 	return [int(g[0:r[0]]), int(g[r[0]+1:r[1]])]
 
-def clean_file(filename):
+def assembler(liste, nom, dossier):
+	fichier = open("essai"+str(dossier)+"/results-D"+str(nom)+".txt", "w")
+	for i in range (liste[0], liste[1] + 1):
+		ecrire = open(str(i)+".txt", "r")
+		fichier.writelines(ecrire.readlines())
+		ecrire.close()
+	fichier.close()
+
+def clean_file(filename, a):
 	fichier = open(filename, "r")
 	data = fichier.readlines()
 	fichier.close()
@@ -26,10 +34,13 @@ def clean_file(filename):
 		while data[i][0] == '#':
 			data[i] = data[i][1:]
 	fichier = open(filename, "w")
-	fichier.writelines(data[:-1]+['\n'])
+	if (a == 1):
+		fichier.writelines(data[1:-1]+['\n'])
+	else :
+		fichier.writelines(data[:-1]+['\n'])
 	fichier.close()
 
-def receive_file(newSocket, filename, max_size):
+def receive_file(newSocket, filename, max_size, a = 1):
 	print "reception de %s..."%filename
 	r = ""
 	output = []
@@ -42,7 +53,7 @@ def receive_file(newSocket, filename, max_size):
 	fichier = open(filename, "w")
 	fichier.writelines(output)
 	fichier.close()
-	clean_file(filename)
+	clean_file(filename, a)
 	return r
 
 def add_file(newSocket, max_size, fichier):
@@ -219,11 +230,31 @@ def envoyer(params, fenetre):
 				if (not enregistrer):
 					os.system("rm th2.png")
 		if "explore" in params:
-			#recevoir les fichiers
+			compteur = 1;
+			nb_fichiers = 6*Dmax/Dstep*Nessai
+			received = receive_file(s, s.recv(12).lstrip(), 12, 3)
+			while (received and compteur <= nb_fichiers):
+				compteur += 1
+				received = receive_file(s, s.recv(12).lstrip(), 12, 3)
 			if (received):
+				#creer les dossiers
+				for i in range (0, Nessai):
+					os.system("mkdir essai"+str(i+1))
+				#assembler les fichiers entre eux
+				i = 1
+				j = 1
+				N = 1
+				while (i < nb_fichiers/6 + 1)
+					assembler([i, i+5], j, N)
+					i += 1
+					j += Dstep
+					if (j > Dmax):
+						j = 1
+						N += 1
 				#lancer le script python
 				afficher(3, fenetre2)
-				os.system("rm *.txt")
+				for i in range (0, Nessai):
+					os.system("rm -rf essai"+str(i+1))
 				if (not enregistrer):
 					os.system("rm *.gif")
 	except socket.error, e:
