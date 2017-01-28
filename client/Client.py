@@ -12,8 +12,6 @@ import select
 
 tentacle_ip = "127.0.0.1"
 
-global enregistrer;
-
 def geoliste(g):
 	r = [i for i in range (0, len(g)) if not g[i].isdigit()]
 	return [int(g[0:r[0]]), int(g[r[0]+1:r[1]])]
@@ -153,39 +151,39 @@ def envoyer(params, fenetre):
 		print s.recv(29)
 		popup = showinfo("", "Les calculs sont prêts à être effectués. Cliquez sur OK pour continuer.")
 		s.sendall(params)
- 	if "run" in params:
-		received = receive_file(s, "mean-life-A.txt", 12)
-		if received: received = receive_file(s,"mean-life-B.txt", 12)
-		if received: received = receive_file(s,"mean-A-in-A.txt", 12)
-		if received: received = receive_file(s,"mean-A-in-B.txt", 12)
-		if received: received = receive_file(s,"mean-B-in-A.txt", 12)
-		if received: received = receive_file(s,"mean-B-in-B.txt", 12)
-		if received: received = receive_file(s,"mean-C-in-A.txt", 12)
-		if received: received = receive_file(s,"mean-C-in-B.txt", 12)
-		if received: received = receive_file(s,"mean-A-out.txt", 12)
-		if received: received = receive_file(s,"mean-B-out.txt", 12)
-		if received: received = receive_file(s,"mean-C-out.txt", 12)
-		if received:
-			os.system("Rscript Analyse.R")
-			afficher(1, fenetre2)
-			os.system("rm *.txt")
-			global enregistrer
-			if (not enregistrer):
-				os.system("rm th.png")
-	if "all" in params:
-		fichier = open("results.txt", "w")
-		received = add_file(s, 12, fichier)
-		i = 1
-		while (received and i < 6):
+		if "run" in params:
+			received = receive_file(s, "mean-life-A.txt", 12)
+			if received: received = receive_file(s,"mean-life-B.txt", 12)
+			if received: received = receive_file(s,"mean-A-in-A.txt", 12)
+			if received: received = receive_file(s,"mean-A-in-B.txt", 12)
+			if received: received = receive_file(s,"mean-B-in-A.txt", 12)
+			if received: received = receive_file(s,"mean-B-in-B.txt", 12)
+			if received: received = receive_file(s,"mean-C-in-A.txt", 12)
+			if received: received = receive_file(s,"mean-C-in-B.txt", 12)
+			if received: received = receive_file(s,"mean-A-out.txt", 12)
+			if received: received = receive_file(s,"mean-B-out.txt", 12)
+			if received: received = receive_file(s,"mean-C-out.txt", 12)
+			if received:
+				os.system("Rscript Analyse.R")
+				afficher(1, fenetre2)
+				os.system("rm *.txt")
+				global enregistrer
+				if (not enregistrer):
+					os.system("rm th.png")
+		if "all" in params:
+			fichier = open("results.txt", "w")
 			received = add_file(s, 12, fichier)
-			i += 1
-		fichier.close()
-		if (received):
-			os.system("Rscript phases.R")
-			afficher(2, fenetre2)
-			os.system("rm *.txt")
-			if (not enregistrer):
-				os.system("rm th2.png")
+			i = 1
+			while (received and i < 6):
+				received = add_file(s, 12, fichier)
+				i += 1
+			fichier.close()
+			if (received):
+				os.system("Rscript phases.R")
+				afficher(2, fenetre2)
+				os.system("rm *.txt")
+				if (not enregistrer):
+					os.system("rm th2.png")
 	except socket.error, e:
 		print "erreur dans l'appel a une methode de la classe socket : %s"%e
 		sys.exit(1)
