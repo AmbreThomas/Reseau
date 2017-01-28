@@ -12,7 +12,7 @@ import time
 import select
 from gif import *
 
-tentacle_ip = "127.0.0.1"
+tentacle_ip = "134.214.158.232"
 
 def geoliste(g):
 	r = [i for i in range (0, len(g)) if not g[i].isdigit()]
@@ -23,10 +23,10 @@ def clean_file(filename):
 	data = fichier.readlines()
 	fichier.close()
 	for i in xrange(len(data)):
-		while data[i][0] == '0' and len(data[i]) > 2:
+		while data[i][0] == '#':
 			data[i] = data[i][1:]
 	fichier = open(filename, "w")
-	fichier.writelines(data[:-2]+['\n'])
+	fichier.writelines(data[:-1]+['\n'])
 	fichier.close()
 
 def receive_file(newSocket, filename, max_size):
@@ -46,7 +46,7 @@ def receive_file(newSocket, filename, max_size):
 	return r
 
 def add_file(newSocket, max_size, fichier):
-	print "reception de donees..."
+	print "reception de donnees..."
 	r = ""
 	output = []
 	while "fin." not in r:
@@ -62,7 +62,7 @@ def clickvalue1(event):
 	envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get()+" 0", fenetre2)
 
 def clickvalue2(event):
-	envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get(), fenetre2)
+	envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueT.get()+" "+valueA0.get(), fenetre2)
 
 def clickvalue3(event):
 	envoyer("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueNessai.get(), fenetre2)
@@ -211,7 +211,7 @@ def envoyer(params, fenetre):
 				received = add_file(s, 12, fichier)
 				i += 1
 			fichier.close()
-			clean_file(fichier)
+			clean_file("results.txt")
 			if (received):
 				os.system("Rscript phases.R")
 				afficher(2, fenetre2)

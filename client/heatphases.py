@@ -21,7 +21,7 @@ print "resolA:", resolA
 data = []
 print "\nouverture de %d fichiers..."%N
 for i in xrange(1,N+1):
-  file_list = open("results/log scale/logscale %d/results-D%f.txt"%(i,10**(-D)))
+  file_list = open("essai%d/results-D%f.txt"%(i,10**(-D)))
   data.append(file_list.readlines())
   file_list.close()
 

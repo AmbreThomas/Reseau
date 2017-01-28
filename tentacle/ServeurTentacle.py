@@ -35,25 +35,25 @@ class ActivePool(object):
 		self.lock = {}
 		self.Parts = {}
 		self.size = 0
-		self.x = 0 #compteur d'ID
-		self.acquired_parts = {}
+		self.x = 1
 	def makeActive(self, name):
 		self.active.append(name)
 		self.ID[name] = self.x
 		self.Parts[name] = []
 		self.lock[name] = threading.Lock()
-		self.acquired_parts[name] = {}
 		self.x+=1
 		self.size+=1
 	def makeInactive(self, name):
 		del self.ID[name]
 		del self.lock[name]
 		del self.Parts[name]
-		del self.acquired_parts[name] #putain Charles arrête les copier-coller foireux ! :P
 		self.active.remove(name)
 		self.size-=1
-		name.shutdown(1)
-		name.close()
+		try :
+			name.shutdown(1)
+			name.close()
+		except :
+			print("already closed")
 	def __str__(self):
 		return(str(self.active))
 	def get_sockCLI(self, id) :
@@ -65,10 +65,10 @@ class ActivePool(object):
 			return(nameS[0])
 	def get_size(self):
 		return(self.size)
-	def get_nb_of_disponible_parts(self) :
-		return(len(self.acquired_parts))
-	def get_acquired_parts(self) :
-		return(self.acquired_parts)
+	def get_nb_of_disponible_parts(self,name) :
+		return(len(self.Parts[name]))
+#	def get_acquired_parts(selfn,name) :
+#		return(self.Parts[name])
 	def close(self) :
 		for so in self.active :
 			so.shutdown(1)
@@ -117,28 +117,28 @@ class Serveur(object) :
 				mysocket, myaddr = s.accept()
 				statut = mysocket.recv(4)
 				if "ask " == statut :
-					print('\nA Client is connected : %s:%d' % myaddr)
+					print('\nUn client se connecte : %s:%d' % myaddr)
 					t = threading.Thread(target=self.handlerCLI, args=[mysocket])
 					self.AllThreadCLI.append(t)
 					t.start()
 					time.sleep(0.2)
 					with self.poolCLI_lock :
-						print(str(self.poolCLI.get_size())+" client(s) actually connected.")
+						print(str(self.poolCLI.get_size())+" clients connectés.")
 				elif "work" == statut :
-					print('A subcontractor is connected : %s:%d' % myaddr)
+					print('Un sous-traitant se connecte : %s:%d' % myaddr)
 					t = threading.Thread(target=self.handlerSUB, args=[mysocket])
 					self.AllThreadSUB.append(t)
 					t.start()
 					time.sleep(0.2)
 					with self.poolSUB_lock :
-						print(str(self.poolSUB.get_size())+" subcontractor(s) actually connected.")
-		print("Joining on the mates.")
+						print(str(self.poolSUB.get_size())+" sous-traitants connectés.")
+		print("Attente de la fin des thread.")
 		for t in self.AllThreadCLI :
 			t.join()
 		WorkingComp = False
 		for t in self.AllThreadSUB :
 			t.join()
-		print('All operations over.')
+		print('Fin des opérations. Extinction des feux. ')
 
 	def fractionne(self, demande_cli, id_client) :
 		#transformer le string en n string dans une liste de taille n
@@ -160,12 +160,13 @@ class Serveur(object) :
 		clientsock.sendall("Request accepted")     
 		with self.poolCLI_lock :    
 			self.poolCLI.makeActive(clientsock) 
+			ID_CLI = self.poolCLI.ID[clientsock]
 		try :
 			demande = clientsock.recv(255)
 		except :
-			print("CLI is gone before asking anything.")
+			print("Client N " +str(ID_CLI) +" parti sans demander son reste")
 		else :
-			print("Client asks: %s"%(demande))
+			print("Client N"+str(ID_CLI)+" demande : %s"%(demande))
 			with self.poolCLI_lock :
 				frac_demande, nb_of_parts = self.fractionne(demande,self.poolCLI.ID[clientsock])
 			with self.Queue_lock :
@@ -174,17 +175,17 @@ class Serveur(object) :
 			parts = 0
 			while WorkingComp and parts < nb_of_parts :
 				with self.poolCLI_lock :
-					parts_waiting = self.poolCLI.get_nb_of_disponible_parts()
+					parts_waiting = self.poolCLI.get_nb_of_disponible_parts(clientsock)
 					if  parts_waiting != 0 :
 						p_file_addr = ""
 						while WorkingComp and p_file_addr == "":
 							try:
 								p_file_addr = self.poolCLI.Parts[clientsock].pop(0)
 							except IndexError:
-								#print "ben ca arrive tout le temps."
+								print "Index Error"
 								pass #pas censé arriver avec le lock !
 				if parts_waiting != 0 :
-					print "on envoie la part:",p_file_addr
+					print "On envoie le fichier : ",p_file_addr, " au client N ", str(ID_CLI)
 					p_file = open(p_file_addr,'r')
 					part = p_file.readlines()
 					p_file.close()
@@ -195,35 +196,47 @@ class Serveur(object) :
 							else:
 								clientsock.sendall(line)
 					except :
-						print('Le client ne recoit pas bien...')
+						print('Déconnexion du client N '+str(ID_CLI))
+						
 					parts+=1
 				else :
 					time.sleep(2)
 					pass
-			print("All parts acquired for client N° : "+str(self.poolCLI.ID[clientsock]))
-
-		#~ self.poolCLI.makeInactive(clientsock)
-		self.poolCLI.makeInactive(clientsock)
+			if parts == nb_of_parts :
+				print("Client N°"+str(ID_CLI)+" satisfait avec succès")
+				self.poolCLI.makeInactive(clientsock)
 
 	def handlerSUB(self,subsock) :
-		print('New subcontractor accepted.')
-		self.poolSUB.makeActive(subsock)
+		with self.poolSUB_lock :
+			self.poolSUB.makeActive(subsock)
+			ID_SUB = self.poolSUB.ID[subsock]
+			ID_SUB = str(ID_SUB)
 		subsock.sendall("Connection accepted.")
-		print('Subcontractors currently connected are :')
-		print(self.poolSUB)
 		while WorkingComp :
 			request = ""
 			try:
 				with self.Queue_lock :
 					request = self.Queue.pop(0)
-			except IndexError:
+			except IndexError:	
+				subsock.settimeout(0)
+				try :
+					subsock.recv(1)
+				except :
+					pass
+				else :
+					print("Déconnexion du sous-traitant N "+ID_SUB)
+					with self.Queue_lock :
+						self.Queue = [request] + self.Queue
+					with self.poolSUB_lock :
+						self.poolSUB.makeInactive(subsock)
+					break
 				time.sleep(1)
 			else :
 				subsock.settimeout(None)  #comment ne pas bloquer mais sortir si il était déjà parti...?
 				try :
 					subsock.send(request)
 				except :
-					print("SUB is gone")
+					print("Déconnexion du sous-traitant N "+ID_SUB)
 					with self.Queue_lock :
 						self.Queue = [request] + self.Queue
 					with self.poolSUB_lock :
@@ -232,13 +245,13 @@ class Serveur(object) :
 				try: #Attente de l'envoi des fichiers
 					ID_mission = subsock.recv(12)
 				except :
-					print("SUB is gone")
+					print("Déconnexion du sous-traitant N "+ID_SUB)
 					with self.Queue_lock :
 						self.Queue = [request] + self.Queue
 					with self.poolSUB_lock :
 						self.poolSUB.makeInactive(subsock)
 					break
-				else :
+				if len(ID_mission) != 0 :
 					ID_cli = int(ID_mission.split(" ")[0])
 					ID_part = int(ID_mission.split(" ")[1])
 					command = "mkdir -p TMP_files/CLI"+str(ID_cli)
@@ -251,7 +264,7 @@ class Serveur(object) :
 						try :
 							results = subsock.recv(12)
 						except :
-							print('The subcontractor stopped emitting.')
+							print("Déconnexion du sous-traitant N "+ID_SUB)
 							with self.Queue_lock :
 								self.Queue_lock = [request] + self.Queue_lock
 							out_file.close()
@@ -264,16 +277,21 @@ class Serveur(object) :
 							out_file.write(results+'\n')
 					out_file.close()
 					if results == "end of job !" :
-						#~ print "des qu'on a le verrou..."
-						#~ with self.poolCLI_lock : #commente parce que sinon, on n'a JAMAIS le verrou.
-						clientsock = self.poolCLI.get_sockCLI(ID_cli)
-						self.poolCLI.Parts[clientsock].append(file_addr)
-						print file_addr,"pret a envoyer."
+						registered = False
+						while not registered :
+							try :
+								self.poolCLI_lock.acquire(0)
+							except :
+								print('poolCLI_lock indisponible') #espéré inutile.
+								time.sleep(1)
+							else :
+								clientsock = self.poolCLI.get_sockCLI(ID_cli)
+								self.poolCLI.Parts[clientsock].append(file_addr)
+								self.poolCLI_lock.release()
+								registered = True
+						print file_addr,"pret a envoyer au client",str(ID_cli)
 					else :
 						break
-		if WorkingComp :
-			with self.poolSUB_lock :
-				self.poolSUB.makeInactive(subsock)
 		print("debug : Un des sous-traitants a termine.")
 	
 
