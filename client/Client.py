@@ -178,6 +178,7 @@ def envoyer(params, fenetre):
 				received = add_file(s, 12, fichier)
 				i += 1
 			fichier.close()
+			clean_file(fichier)
 			if (received):
 				os.system("Rscript phases.R")
 				afficher(2, fenetre2)
@@ -226,23 +227,33 @@ def enregistrer_image():
 	global enregistrer
 	enregistrer = 1
 
+def clickbutton1(event):
+	global valueRequest
+	ParamRequest(valueRequest.get(), fenetre)
+
 def main():
+	global fenetre
 	fenetre = Tk()
 	f1 = Frame(fenetre).pack(padx = 1, pady = 1)
 	fenetre.title('')
 	label = Label(f1, text = "Merci de choisir la requête à envoyer").pack()
+	global valueRequest
 	valueRequest = IntVar()
 	valueRequest.set(1)
 	Radiobutton(f1, text="Realiser une simulation", variable=valueRequest, value=1).pack(anchor=W)
 	Radiobutton(f1, text="Exploration parametrique (T et A0)", variable=valueRequest, value=2).pack(anchor=W)
 	Radiobutton(f1, text="Exploration parametrique (T, A0 et Dmax)", variable=valueRequest, value=3).pack(anchor=W)
-	Button(f1, text="Valider", command=lambda: ParamRequest(valueRequest.get(), fenetre)).pack(side = LEFT)
+	valider = Button(f1, text="Valider")
+	valider.pack(side = LEFT)
 	Button(f1, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
 	L, H = geoliste(fenetre.geometry())
 	h = fenetre.winfo_screenheight()
 	w = fenetre.winfo_screenwidth()
 	L = 350
 	H = 150
+	valider.focus_set()
+	valider.bind('<Return>', clickbutton1)
+	valider.bind("<Button-1>", clickbutton1)
 	fenetre.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
 	fenetre.mainloop()
 
