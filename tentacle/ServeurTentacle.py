@@ -150,6 +150,30 @@ class Serveur(object) :
 			for i in xrange(6):
 				frac_demande.append( str(id_client)+" %d "%(i+1)+ " ".join(demande_cli.split(" ")[:7]) + " %d"%(i+1) )
 				frac_demande[-1] = frac_demande[-1][:255]
+		if "explore3D" in demande_cli:
+			frac_demande = []
+			args = demande_cli.split(" ")
+			Nessais = int(args[8])
+			Dmax = int(args[4]) # de 10^(-1) à 10^(-Dmax)
+			Dstep = int(args[5])
+			print Nessais,"essais","Dmax=",Dmax,"Dstep=",Dstep,"soit",6*Dmax/Dstep*Nessais,"jobs au total"
+			print args
+			compteur = 0
+			for essai in range(1,1+Nessais):
+				for D in range(1, 1+Dmax, Dstep):
+					
+					D_str = "0."
+					while len(D_str)<D+1:
+						D_str = D_str + "0"
+					D_str = D_str + "1"
+					
+					for zone in xrange(1,7):
+						compteur += 1
+						demande = "./main all "+" ".join(args[2:4])+" "+D_str+" "+" ".join(args[6:8])
+						print "job ",str(id_client)+" %d "%(compteur), demande
+						frac_demande.append( str(id_client)+" %d "%(compteur)+ demande + " %d"%(zone) )
+						frac_demande[-1] = frac_demande[-1][:255]
+					
 		return(frac_demande, len(frac_demande))
 
 	#gérer la relation client

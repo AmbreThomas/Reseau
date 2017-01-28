@@ -3,6 +3,8 @@ from Tkinter import *
 from tkMessageBox import *
 import sys
 import tkFont
+import matplotlib.pyplot as plt
+from numpy import *
 import socket
 import os
 import string
@@ -10,6 +12,7 @@ import signal
 from PIL import Image, ImageTk
 import time
 import select
+from gif import *
 
 def find_tentacle(timeout = 15) :
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -37,11 +40,58 @@ def find_tentacle(timeout = 15) :
 
 tentacle_ip = find_tentacle()
 
+def heatphases(D, N, resolT, resolA):
+	ncol = 1500/resolT
+	nrow = 51/resolA
+#=================== Parsing files =====================================
+	data = []
+	print "\nouverture de %d fichiers..."%N
+	for i in xrange(1,N+1):
+		file_list = open("essai%d/results-D%d.txt"%(i, D))
+		data.append(file_list.readlines())
+		file_list.close()
+	matrix = zeros((nrow+1, ncol+1))
+	print "\nmixing the %d runs..."%N
+	for point in xrange(len(data[0])):
+		l = []
+		for essai in xrange(N):
+			l.append( data[essai][point].split(' ') )
+		matrix[ int(l[0][0])/resolA, int(l[0][1])/resolT] = sum([ int(l[k][2]) for k in xrange(N) ])/float(N)
+	print "> OK"
+	print "\ngenerating heatmap for D=%f..."%(10**(-D))
+	X = zeros((nrow+1, ncol+1))
+	Y = zeros((nrow+1, ncol+1))
+
+	for i in xrange(nrow+1):
+		for j in xrange(ncol+1):
+			X[i,j] = resolT*j+1
+			Y[i,j] = resolA*i
+	print "\n",shape(X),"\n",shape(Y),"\n",shape(matrix),"\n"
+
+
+	plt.pcolor(X,Y,matrix)
+	plt.title("Diagramme de phases des colonies satellites")
+	plt.suptitle("pour D = %f"%(10**(-D)))
+	plt.xlim(0,1500)
+	plt.ylim(0, 50)
+	plt.xlabel("Temps avant de repiquer la culture")
+	plt.ylabel("[Glucose] initiale")
+	print "saving %d.png..."%D
+	plt.savefig("%d.png"%D)
+
 def geoliste(g):
 	r = [i for i in range (0, len(g)) if not g[i].isdigit()]
 	return [int(g[0:r[0]]), int(g[r[0]+1:r[1]])]
 
-def clean_file(filename):
+def assembler(liste, nom, dossier):
+	fichier = open("essai"+str(dossier)+"/results-D"+str(nom)+".txt", "w")
+	for i in range (liste[0], liste[1] + 1):
+		ecrire = open(str(i)+".txt", "r")
+		fichier.writelines(ecrire.readlines())
+		ecrire.close()
+	fichier.close()
+
+def clean_file(filename, a):
 	fichier = open(filename, "r")
 	data = fichier.readlines()
 	fichier.close()
@@ -49,10 +99,13 @@ def clean_file(filename):
 		while data[i][0] == '#':
 			data[i] = data[i][1:]
 	fichier = open(filename, "w")
-	fichier.writelines(data[:-1]+['\n'])
+	if (a == 1):
+		fichier.writelines(data[1:-1]+['\n'])
+	else :
+		fichier.writelines(data[:-1]+['\n'])
 	fichier.close()
 
-def receive_file(newSocket, filename, max_size):
+def receive_file(newSocket, filename, max_size, a = 1):
 	print "reception de %s..."%filename
 	r = ""
 	output = []
@@ -65,7 +118,7 @@ def receive_file(newSocket, filename, max_size):
 	fichier = open(filename, "w")
 	fichier.writelines(output)
 	fichier.close()
-	clean_file(filename)
+	clean_file(filename, a)
 	return r
 
 def add_file(newSocket, max_size, fichier):
@@ -88,7 +141,7 @@ def clickvalue2(event):
 	envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueT.get()+" "+valueA0.get(), fenetre2)
 
 def clickvalue3(event):
-	envoyer("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueNessai.get(), fenetre2)
+	envoyer("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueT.get()+" "+valueA0.get()+" "+valueNessai.get(), fenetre2)
 
 def ParamRequest(value, fen):
 	fen.destroy()
@@ -241,6 +294,34 @@ def envoyer(params, fenetre):
 				os.system("rm *.txt")
 				if (not enregistrer):
 					os.system("rm th2.png")
+		if "explore" in params:
+			compteur = 1;
+			nb_fichiers = 6*Dmax/Dstep*Nessai
+			received = receive_file(s, s.recv(12).lstrip(), 12, 3)
+			while (received and compteur <= nb_fichiers):
+				compteur += 1
+				received = receive_file(s, s.recv(12).lstrip(), 12, 3)
+			if (received):
+				#creer les dossiers
+				for i in range (0, Nessai):
+					os.system("mkdir essai"+str(i+1))
+				#assembler les fichiers entre eux
+				i = 1
+				j = 1
+				N = 1
+				while (i < nb_fichiers/6 + 1)
+					assembler([i, i+5], j, N)
+					i += 1
+					j += Dstep
+					if (j > Dmax):
+						j = 1
+						N += 1
+				#lancer le script python
+				afficher(3, fenetre2)
+				for i in range (0, Nessai):
+					os.system("rm -rf essai"+str(i+1))
+				if (not enregistrer):
+					os.system("rm *.gif")
 	except socket.error, e:
 		print "erreur dans l'appel a une methode de la classe socket : %s"%e
 		sys.exit(1)
@@ -273,6 +354,12 @@ def afficher(nb, fenetre):
 		lab = Label(image = photo)
 		lab.image=photo
 		lab.pack()
+	if (nb == 3):
+		L = 850
+		H = 650
+		fenetre.geometry("%dx%d+"%(L,H) + str(w/2-L/2) + "+"+str(h/2-H/2))
+		path = os.getcwd()
+		image = App(fenetre, path+"/gif_anime.gif")
 	global enregistrer
 	enregistrer = 0
 	Button(fenetre, text="Cliquez ici pour enregistrer l'image", command=enregistrer_image).pack(side = LEFT)

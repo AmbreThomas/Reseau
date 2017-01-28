@@ -136,7 +136,6 @@ void run(int W, int H, double D, double Azero, int T, size_t iterMax, size_t pho
   exit(success);
 }
 
-
 int main(int argc, char* argv[]){
 
   srand(time(NULL));
@@ -145,46 +144,8 @@ int main(int argc, char* argv[]){
   //======================= checking args ==============================
 
   string All("all");
-  string New("new");
-  string Rscript("Rscript");
   string Run("run");
-  string Explore3D("explore3D");
-
-  if (argc <2) {
-    cout << "Syntaxe:\n./main [ run ] [ all ] [ Rscript ] [ explore3D ]" << endl;
-    cout << "./main run W H D A0 T iterMax photo" << endl;
-    cout << "./main all W H D resolT resolA zone [ new ]" << endl;
-    cout << "./main explore3D W H resolT resolA Dmax Dstep Nessais [ new ]" << endl;
-    exit(1);
-  }
-
-  for (unsigned int i=0; i<argc; i++){
-    string Arg(argv[i]);
-    if (Arg==New) {
-      success += system("rm *.txt Rplots.pdf");
-      cout << "\nStarting from scratch.\n" << endl;
-    }
-  }
-
   string Arg(argv[1]);
-
-  if (Arg==Rscript) {
-    struct tm instant;
-    time_t secondes;
-    time_t start_time = time(NULL);
-    time_t spent = 0;
-    while (true){
-      cout << endl;
-      success += system("Rscript phases.R");
-      time(&secondes);
-      spent = difftime(secondes, start_time);
-      instant=*localtime(&spent);
-      printf("Temps écoulé: %dh %dmin %ds\n", instant.tm_hour-1, instant.tm_min, instant.tm_sec);
-      while (secondes==time(NULL)){
-        cout << "";
-      }
-    }
-  }
 
   if (Arg==All) {
     int W = 32;
@@ -237,63 +198,6 @@ int main(int argc, char* argv[]){
 
     run(W,H,D,Azero,T,iterMax,photo);
   }
-
-  if (Arg==Explore3D) {
-    int W = 32;
-    int H = 32;
-    int resolT = 20;
-    int resolA = 1;
-    int Dmax = 7;
-    int Dstep = 1;
-    int N_essais = 9;
-
-    if (argc<9){
-      cout << "./main explore3D W H resolT resolA Dmax Dstep Nessais" << endl;
-      cout << "using default parameters." << endl;
-    }
-    else {
-      W = atoi(argv[2]);
-      H = atoi(argv[3]);
-      resolT = atoi(argv[4]);
-      resolA = atoi(argv[5]);
-      Dmax = atoi(argv[6]);
-      Dstep = atoi(argv[7]);
-      N_essais = atoi(argv[8]);
-    }
-
-    success += system("mkdir results");
-    success += system("mkdir 'results/log scale'");
-
-    for (int essai=1; essai<N_essais+1; essai++){
-      string num = to_string(essai);
-      string arg = "mkdir 'results/log scale/logscale "+num+"'";
-      success += system( arg.c_str() );
-
-      for (int D=1; D<Dmax+1; D += Dstep){
-        string strD = "0.";
-        for (int i=1; i<D; i++){ strD += '0'; }
-        strD += '1';
-        double decD = atof(strD.c_str());
-
-        cout << "====================> essai " << essai << ", D= " << decD << endl;
-        explore_params(W, H, decD, 0, 50, resolT, resolA, 7);
-        arg = "mv results.txt 'results/log scale/logscale "+num+"/results-D"+to_string(decD)+".txt'";
-        cout << arg << endl;
-        success += system(arg.c_str());
-
-      }
-    }
-    cout << "\ngenerating the phases diagrams..." << endl;
-    for (int D=1; D<Dmax+1; D+= Dstep){
-      string arg = "python heatphases.py "+to_string(D)+" "+to_string(N_essais)+" "+to_string(resolT)+" "+to_string(resolA);
-      success += system( arg.c_str() );
-    }
-    cout << "\ngenerating phases-3D-logscale.gif" << endl;
-    success += system("convert -delay 100 -loop 0 *.png phases-3D-logscale.gif");
-    success += system("mv *.png 'results/log scale'");
-    cout << "=====================================\nComputation done. Hope you enjoyed it." << endl;
-  }
-
 
   return EXIT_SUCCESS;
 }
