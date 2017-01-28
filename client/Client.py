@@ -150,6 +150,10 @@ def signal_handler(signal, frame):
 def envoyer(params, fenetre):
 	fenetre.destroy()
 	fenetre2=Tk()
+	h = fenetre2.winfo_screenheight()
+	w = fenetre2.winfo_screenwidth()
+	L, H = geoliste(fenetre2.geometry())
+	fenetre2.geometry("%dx%d+"%(L,H) + str(w/2-L/2) + "+" + str(h/2-H/2))
 	signal.signal(signal.SIGINT, signal_handler)
 	print 'Press Ctrl+C pour arreter le client'
 	for i in range(len(params), 255):
