@@ -167,25 +167,25 @@ def envoyer(params, fenetre):
 		if received: received = receive_file(s,"mean-C-out.txt", 12)
 		if received:
 			os.system("Rscript Analyse.R")
-		afficher(1, fenetre2)
-		os.system("rm *.txt")
-		global enregistrer
-		if (not enregistrer):
-			os.system("rm th.png")
-		if "all" in params:
+			afficher(1, fenetre2)
+			os.system("rm *.txt")
+			global enregistrer
+			if (not enregistrer):
+				os.system("rm th.png")
+	if "all" in params:
 		fichier = open("results.txt", "w")
 		received = add_file(s, 12, fichier)
 		i = 1
 		while (received and i < 6):
-				received = add_file(s, 12, fichier)
+			received = add_file(s, 12, fichier)
 			i += 1
 		fichier.close()
 		if (received):
 			os.system("Rscript phases.R")
-		afficher(2, fenetre2)
-		os.system("rm *.txt")
-		if (not enregistrer):
-			os.system("rm th2.png")
+			afficher(2, fenetre2)
+			os.system("rm *.txt")
+			if (not enregistrer):
+				os.system("rm th2.png")
 	except socket.error, e:
 		print "erreur dans l'appel a une methode de la classe socket : %s"%e
 		sys.exit(1)
