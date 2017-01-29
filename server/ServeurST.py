@@ -172,6 +172,8 @@ if __name__ == '__main__':
     
 	if len(argv) == 2 :
 		max_cpu_to_use = int(argv[1])
+	else:
+		max_cpu_to_use = 100
         
 	jobs = []
 	global continuer
