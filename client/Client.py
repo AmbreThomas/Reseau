@@ -356,7 +356,6 @@ def envoyer(params, fenetre):
 				global enregistrer
 				if (valueGif.get() == 1):
 					global enregistrer_gif
-					afficherGifRequete1()
 					if (not enregistrer_gif):
 						os.system("rm Visualisation_simulation.gif")
 					else:
