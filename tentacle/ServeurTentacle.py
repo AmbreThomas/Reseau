@@ -19,10 +19,10 @@ def signal_handler_stop(signal, frame):
 	global WorkingServ
 	global WorkingComp
 	if (not WorkingServ) & WorkingComp :
-		print('The subcontractors stop working (Ctrl+C)')
+		print('\nLes sous-traitants arrêtent le travail (Ctrl+C pressé une deuxième fois)')
 		WorkingComp = False #pour arrêt des thread. #essayer exemple minimal...
 	if WorkingServ :
-		print('\nWe do not accept new clients anymore (Ctrl+C)')
+		print("\nNous n'acceptons plus de nouveaux clients (Ctrl+C pressé une fois)")
 		WorkingServ = False #pour arrêt de l'écoute
 
 #sauvegarde de socket et suivi de leur activité.
@@ -53,7 +53,7 @@ class ActivePool(object):
 			name.shutdown(1)
 			name.close()
 		except :
-			print("already closed")
+			pass
 	def __str__(self):
 		return(str(self.active))
 	def get_sockCLI(self, id) :
@@ -73,8 +73,9 @@ class ActivePool(object):
 
 class Serveur(object) :
 	def __init__(self):
+		print("Bienvenue dans le serveur de calcul distribué Osiris.")
 		try :
-			print("Cleaning the place.")
+			print("Nous faisons le ménage dans les dossiers.")
 			system("rm -rf TMP_files")
 			system("mkdir TMP_files")
 		except :
@@ -104,7 +105,7 @@ class Serveur(object) :
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
 		sock.bind(('',int(self.port1)))
 		sock.listen(20)
-		print('Listening on port %s'%self.port1)
+		print('Ecoute sur le port %s'%self.port1)
 
 		while WorkingServ :
 			readable = []
@@ -176,7 +177,9 @@ class Serveur(object) :
 	#gérer la relation client
 	def handlerCLI(self,clientsock):
 		## Lien et réception de la reuqête.
-		clientsock.sendall("Request accepted")     
+		with self.poolSUB_lock :
+			nb_sub_dispo = self.poolSUB.get_size()
+		clientsock.sendall("Requête acceptée ("+ str(nb_sub_dispo)+"ST)")     
 		with self.poolCLI_lock :    
 			self.poolCLI.makeActive(clientsock) 
 			ID_CLI = self.poolCLI.ID[clientsock]
@@ -240,7 +243,7 @@ class Serveur(object) :
 			self.poolSUB.makeActive(subsock)
 			ID_SUB = self.poolSUB.ID[subsock]
 			ID_SUB = str(ID_SUB)
-		subsock.sendall("Connection accepted.")
+		subsock.sendall("Connexion acceptée.")
 		while WorkingComp :
 			request = ""
 			try:
@@ -248,8 +251,9 @@ class Serveur(object) :
 					request = self.Queue.pop(0)
 			except IndexError:
 				subsock.settimeout(0)
+				rec = ""
 				try :
-					subsock.recv(1)
+					rec = subsock.recv(4)
 				except :
 					pass
 				else :
@@ -263,7 +267,7 @@ class Serveur(object) :
 			else :
 				subsock.settimeout(None)  #comment ne pas bloquer mais sortir si il était déjà parti...?
 				try :
-					subsock.send(request)
+					s = subsock.send(request)
 				except :
 					print("Déconnexion du sous-traitant N "+ID_SUB)
 					with self.Queue_lock :
@@ -325,7 +329,7 @@ class Serveur(object) :
 									registered = True
 									print file_addr," prêt a être envoyé au client N°",str(ID_cli)
 								else :
-									print("debug : the client was gone")
+									print("Le client N°"+str(ID_cli)+" est parti sauvagement...")
 									self.poolCLI_lock.release()
 									break
 					else :
@@ -337,7 +341,8 @@ class Serveur(object) :
 		s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 		s.bind(('', port_b))
 		s.settimeout(0.1)
-		print "Ecoute broadcast sur le port ", port_b,"\n"
+		print("\nEcoute broadcast sur le port "+ str(port_b) +"\n")
+		time.sleep(0.1)
 		global WorkingServ
 		while WorkingServ:
 			try:
