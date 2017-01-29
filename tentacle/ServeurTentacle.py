@@ -292,6 +292,7 @@ class Serveur(object) :
 					out_file = open(file_addr,'w')
 					out_file.write(file_name+'\n')
 					results = "" 
+					GIF_to_get = False
 					while WorkingComp:
 						try :
 							results = subsock.recv(12)
@@ -303,11 +304,35 @@ class Serveur(object) :
 							with self.poolSUB_lock :
 								self.poolSUB.makeInactive(subsock)
 							break
-						else :
+						if "end of job !" == results:
+							break
+						if results[0:3] == "GIF" :
+							nb_octets = int(results.split()[-1])
+							surplus = nb_octets%1024
+							nb_of_blocs = (nb_octets-surplus)/1024
+							GIF_to_get = True
+							break
+						out_file.write(results+'\n')
+					out_file.close()			
+					if GIF_to_get :
+						file_addr_gif = "TMP_files/CLI"+str(ID_cli)+"/GIF"+str(ID_part)+".txt"
+						out_file = open(file_addr_gif,'w')		
+						while WorkingComp :
+							try :
+								results = subsock.recv(1024)
+							except :
+								print("Déconnexion du sous-traitant N "+ID_SUB)
+								with self.Queue_lock :
+									self.Queue = [request] + self.Queue
+								out_file.close()
+								with self.poolSUB_lock :
+									self.poolSUB.makeInactive(subsock)
+								break
 							if "end of job !" == results:
 								break
-							out_file.write(results+'\n')
-					out_file.close()
+							out_file.write(results)
+						out_file.close()			
+										
 					if "end of job !" == results:
 						registered = False
 						while not registered :
@@ -320,6 +345,8 @@ class Serveur(object) :
 								clientsock = self.poolCLI.get_sockCLI(ID_cli)
 								if clientsock >=0:
 									self.poolCLI.Parts[clientsock].append(file_addr)
+									if GIF_to_get :
+										self.poolCLI.Parts[clientsock].append(file_addr_gif)
 									self.poolCLI_lock.release()
 									registered = True
 									print file_addr," prêt a être envoyé au client N°",str(ID_cli)
