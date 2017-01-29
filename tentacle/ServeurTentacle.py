@@ -194,9 +194,10 @@ class Serveur(object) :
 				with self.poolCLI_lock :
 					frac_demande, nb_of_parts = self.fractionne(demande,self.poolCLI.ID[clientsock])
 					GIF_to_send = False
-				if int(demande.split()[8])>0 and nb_of_parts == 1:
-					nb_of_parts+=1
-					GIF_to_send = True
+				if nb_of_parts == 1 :
+					if int(demande.split()[8])>0 :
+						nb_of_parts+=1
+						GIF_to_send = True
 				with self.Queue_lock :
 					self.Queue.extend(frac_demande)
 				############### RENVOYER LES RESULTATS #################
