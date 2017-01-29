@@ -21,21 +21,9 @@ void explore_params(int W, int H, double& D, int Amin, int Amax, int resolT, int
     case (7): Tmin = 1; Tmax = 1500; break;
   }
 
-  //~ cout << "W: " << W << endl;
-  //~ cout << "H: " << H << endl;
-  //~ cout << "D: " << D << endl;
-  //~ cout << "Amin: " << Amin << endl;
-  //~ cout << "Amax: " << Amax << endl;
-  //~ cout << "Astep: " << resolA << endl;
-  //~ cout << "Tmin: " << Tmin << endl;
-  //~ cout << "Tmax: " << Tmax << endl;
-  //~ cout << "Tstep: " << resolT << endl;
-
   for (double Azero=Amin; Azero<Amax+1; Azero+= resolA){
-    //~ int Tmin = 5.0*(Azero+150.0);
-    //~ int Tmax = 5.0*(Azero+225.0);
-
     for (unsigned int T=Tmin; T<Tmax+1; T+= resolT){
+
       Box Petri = Box(W,H,D,Azero);
       size_t iter = 1;
 

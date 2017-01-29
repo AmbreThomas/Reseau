@@ -71,7 +71,7 @@ def newsubcontractor(i):
 					send_file(s, "mean-C-out.txt", 12)
 					if int(args[8]):
 						send_gif(s, "result.gif")
-					#system("rm -f *.txt *.gif")
+					system("rm -f *.txt *.gif")
 				if "all" in received:
 					send_file(s, "results.txt", 12)
 					system("rm -f results.txt")
@@ -127,7 +127,6 @@ def send_gif(target_sock, filename):
 	alert = str(octets)
 	while len(alert)<9:
 		alert = " "+alert
-	print(octets)
 	target_sock.sendall("GIF"+alert)
 	num = 0
 	for i in range(octets / 1024):

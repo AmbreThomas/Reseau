@@ -130,11 +130,8 @@ def receive_gif(conn, filename):
 	fichier = open(filename, "wb")
 	for i in range(octets/1024):
 		received = conn.recv(1024)
-		print "taille recue : ", len(received)
 		fichier.write(received)
-	print("almost done")
 	r = conn.recv(octets%1024)
-	print "recv"
 	fichier.write(r)	
 	fichier.close()
 

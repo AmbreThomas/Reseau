@@ -237,7 +237,6 @@ class Serveur(object) :
 							blocks_got = 0
 							while blocks_got<nb_of_blocks :
 								try :
-									print "Block sent to cli :"+str(blocks_got)
 									p = p_file.read(1024)
 									clientsock.sendall(p)
 									blocks_got+=1
@@ -302,115 +301,104 @@ class Serveur(object) :
 					with self.poolSUB_lock :
 						self.poolSUB.makeInactive(subsock)
 					break
-				try: #Attente de l'envoi des fichiers
-					ID_mission = subsock.recv(12)
-				except :
-					print("Déconnexion du sous-traitant N "+ID_SUB)
-					with self.Queue_lock :
-						self.Queue = [request] + self.Queue
-					with self.poolSUB_lock :
-						self.poolSUB.makeInactive(subsock)
-					break
-				########## RECEPTIONNER LES RESULTATS ##################
-				if len(ID_mission) > 2 :
-					###### PREPARER LES DOSSIERS/FICHIERS PART.TXT #####
-					ID_cli = int(request.split(" ")[0])
-					ID_part = int(request.split(" ")[1])
-					command = "mkdir -p TMP_files/CLI"+str(ID_cli)
-					system(command)
-					rep_addr = "TMP_files/CLI"+str(ID_cli)
-					file_addr = "TMP_files/CLI"+str(ID_cli)+"/PART"+str(ID_part)+".txt"
-					file_name = str(ID_part)+".txt"
-					while len(file_name)<12:
-						file_name = " " + file_name 
-					out_file = open(file_addr,'w')
-					out_file.write(file_name+'\n')
-					results = "" 
-					GIF_to_get = False
-					while WorkingComp:
-						########### RECEVOIR FICHIERS TEXTE ############
+				###### PREPARER LES DOSSIERS/FICHIERS PART.TXT #####
+				ID_cli = int(request.split(" ")[0])
+				ID_part = int(request.split(" ")[1])
+				command = "mkdir -p TMP_files/CLI"+str(ID_cli)
+				system(command)
+				rep_addr = "TMP_files/CLI"+str(ID_cli)
+				file_addr = "TMP_files/CLI"+str(ID_cli)+"/PART"+str(ID_part)+".txt"
+				file_name = str(ID_part)+".txt"
+				while len(file_name)<12:
+					file_name = " " + file_name 
+				out_file = open(file_addr,'w')
+				out_file.write(file_name+'\n')
+				results = "" 
+				GIF_to_get = False
+				while WorkingComp:
+					########### RECEVOIR FICHIERS TEXTE ############
+					try :
+						results = subsock.recv(12)
+					except :
+						print("Déconnexion du sous-traitant N "+ID_SUB)
+						with self.Queue_lock :
+							self.Queue = [request] + self.Queue
+						with self.poolSUB_lock :
+							self.poolSUB.makeInactive(subsock)
+						break
+					if "end of job !" == results:
+						break
+					out_file.write(results+"\n")
+					if results[0:3] == "GIF" :
+						nb_octets = int(results.split()[-1])
+						surplus = nb_octets%1024
+						nb_of_blocs = (nb_octets-surplus)/1024
+						GIF_to_get = True
+						blocks_got = 0
+						break
+				out_file.close()
+				print "on passe au GIF !"
+				time.sleep(10)
+				if GIF_to_get :
+					########### RECEVOIR FICHIERS GIF ##############
+					file_addr_gif = "TMP_files/CLI"+str(ID_cli)+"/GIF"+str(ID_part)+".gif"
+					out_file = open(file_addr_gif,'wb')		
+					while WorkingComp and blocks_got<nb_of_blocs :
 						try :
-							results = subsock.recv(12)
+							results = subsock.recv(1024)
 						except :
 							print("Déconnexion du sous-traitant N "+ID_SUB)
 							with self.Queue_lock :
 								self.Queue = [request] + self.Queue
+							out_file.close()
 							with self.poolSUB_lock :
 								self.poolSUB.makeInactive(subsock)
 							break
-						if "end of job !" == results:
-							break
-							out_file.write(results+"\n")
-						if results[0:3] == "GIF" :
-							nb_octets = int(results.split()[-1])
-							surplus = nb_octets%1024
-							nb_of_blocs = (nb_octets-surplus)/1024
-							GIF_to_get = True
-							blocks_got = 0
-							break
+						out_file.write(results)
+						blocks_got+=1
+					try :
+						results = subsock.recv(surplus)
+						out_file.write(results)
+					except :
+						print("Déconnexion du sous-traitant N "+ID_SUB)
+						with self.Queue_lock :
+							self.Queue = [request] + self.Queue
+						with self.poolSUB_lock :
+							self.poolSUB.makeInactive(subsock)
+						break	
 					out_file.close()
-					if GIF_to_get :
-						########### RECEVOIR FICHIERS GIF ##############
-						file_addr_gif = "TMP_files/CLI"+str(ID_cli)+"/GIF"+str(ID_part)+".gif"
-						out_file = open(file_addr_gif,'wb')		
-						while WorkingComp and blocks_got<nb_of_blocs :
-							try :
-								results = subsock.recv(1024)
-							except :
-								print("Déconnexion du sous-traitant N "+ID_SUB)
-								with self.Queue_lock :
-									self.Queue = [request] + self.Queue
-								out_file.close()
-								with self.poolSUB_lock :
-									self.poolSUB.makeInactive(subsock)
-								break
-							out_file.write(results)
-							blocks_got+=1
-						try :
-							results = subsock.recv(surplus)
-							out_file.write(results)
-						except :
-							print("Déconnexion du sous-traitant N "+ID_SUB)
-							with self.Queue_lock :
-								self.Queue = [request] + self.Queue
-							with self.poolSUB_lock :
-								self.poolSUB.makeInactive(subsock)
-							break	
-						out_file.close()
-					####### DECLARER LES FICHIERS COMME DISPONIBLES ####
-					registered = False
-					while not registered:
-						try :
-							self.poolCLI_lock.acquire(0)
-						except :
-							print('poolCLI_lock indisponible') #espéré inutile. jamais vu
-							time.sleep(1)
+				####### DECLARER LES FICHIERS COMME DISPONIBLES ####
+				registered = False
+				while not registered:
+					try :
+						self.poolCLI_lock.acquire(0)
+					except :
+						print('poolCLI_lock indisponible') #espéré inutile. jamais vu
+						time.sleep(1)
+					else :
+						clientsock = self.poolCLI.get_sockCLI(ID_cli)
+						if clientsock >=0:
+							self.poolCLI.Parts[clientsock].append(file_addr)
+							print file_addr," prêt a être envoyé au client N°",str(ID_cli)
+							if GIF_to_get :
+								self.poolCLI.Parts[clientsock].append(file_addr_gif)
+								print file_addr_gif," prêt a être envoyé au client N°",str(ID_cli)
+							self.poolCLI_lock.release()
+							registered = True
 						else :
 							clientsock = self.poolCLI.get_sockCLI(ID_cli)
-							if clientsock >=0:
+							if clientsock >=0: #si il existe toujours...
 								self.poolCLI.Parts[clientsock].append(file_addr)
-								print file_addr," prêt a être envoyé au client N°",str(ID_cli)
+								print file_addr,"prêt a être envoyé au client N°",str(ID_cli)
 								if GIF_to_get :
 									self.poolCLI.Parts[clientsock].append(file_addr_gif)
-									print file_addr_gif," prêt a être envoyé au client N°",str(ID_cli)
+									print file_addr_gif,"prêt a être envoyé au client N°",str(ID_cli)
 								self.poolCLI_lock.release()
 								registered = True
 							else :
-								clientsock = self.poolCLI.get_sockCLI(ID_cli)
-								if clientsock >=0: #si il existe toujours...
-									self.poolCLI.Parts[clientsock].append(file_addr)
-									print file_addr,"prêt a être envoyé au client N°",str(ID_cli)
-									if GIF_to_get :
-										self.poolCLI.Parts[clientsock].append(file_addr_gif)
-										print file_addr_gif,"prêt a être envoyé au client N°",str(ID_cli)
-									self.poolCLI_lock.release()
-									registered = True
-								else :
-									print("Le client N°"+str(ID_cli)+" est parti sauvagement...")
-									self.poolCLI_lock.release()
-									break
-					else :
-						break
+								print("Le client N°"+str(ID_cli)+" est parti sauvagement...")
+								self.poolCLI_lock.release()
+								break
 
 	############# REPONDRE A LA RECHERCHE D'OSIRIS ####################
 	def broadcasting(self,port_b) :
