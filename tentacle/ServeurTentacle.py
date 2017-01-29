@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-#https://pymotw.com/2/threading/ 
-# https://docs.python.org/2.3/lib/semaphore-examples.html pour pool
-# see http://www.programcreek.com/python/example/21025/signal.CTRL_BREAK_EVENT for breaking
-# cf helio : https://duckduckgo.com/?q=global+variable+thread+python&atb=v37-5__&ia=qa&iax=1
-#des daemons pour les ordi calculant ? interet ?
 
 import socket
 import threading
@@ -350,7 +345,6 @@ class Serveur(object) :
 		while WorkingServ:
 			try:
 				message, address = s.recvfrom(10)
-				#print "Partenaire nous recherchant : ",address
 				s.sendto("Le serveur Tentacule tourne à merveille. Envoyez votre requête.",address)
 			except :
 				pass	
@@ -358,5 +352,6 @@ class Serveur(object) :
 
 
 if __name__=="__main__":
+    
 	signal.signal(signal.SIGINT, signal_handler_stop) #1er CTRL+C gère arrêt écoute, 2e gère arrêt clients.
 	Serveur()
