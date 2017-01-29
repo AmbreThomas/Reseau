@@ -14,4 +14,4 @@ Ecoli.o: Ecoli.cpp Ecoli.h
 	g++ -g -O4 -c -o Ecoli.o Ecoli.cpp --std=c++11
 
 clean:
-	rm *.o *.gif  Rplots.pdf mean*.txt
+	rm -f *.o *.gif  Rplots.pdf mean*.txt

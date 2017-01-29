@@ -3,11 +3,10 @@ from socket import *
 from sys import argv
 import signal
 from multiprocessing import *
-from os import system, chdir, getcwd, getpid, listdir, mkdir
+from os import system, chdir, getcwd, mkdir, path
 from time import sleep
 
 def newsubcontractor(i):
-	#~ i = 1
 	nom_machine = str(gethostname())+"-"+str(i+1)
 	try:
 		mkdir(nom_machine)
@@ -20,10 +19,34 @@ def newsubcontractor(i):
 	print "Sous-traitant %s disponible."%nom_machine
 	s.connect( (tentacle_ip, 6666) )
 	s.sendall("work")
-	print s.recv(20)
+	global continuer
+	continuer = True
+	global CtrlC
+	deco = False
+	global deco
+	
+	try :
+		print s.recv(20)
+	except KeyboardInterrupt:
+		CtrlC = True
+		continuer = False
+	s.settimeout(0.5)
 	try:
-		while 1: #tant que le sous-traitant n'est pas coupe avec Ctrl+C
-			received = s.recv(255)
+		while continuer : #tant que le sous-traitant n'est pas coupe avec Ctrl+C
+			received = ""
+			try :
+				received = s.recv(255)
+			except KeyboardInterrupt :
+				CtrlC = True
+				continuer = False
+				break
+			except timeout :
+				pass
+			else :
+				if len(received) <2 :
+					deco = True
+					continuer = False
+					break
 			if received: #Accepte une demande de tentacle
 				print "==> New job from tentacle server."
 				jobID = " ".join(received.split(" ")[:2])
@@ -46,9 +69,8 @@ def newsubcontractor(i):
 					send_file(s, "mean-A-out.txt", 12)
 					send_file(s, "mean-B-out.txt", 12)
 					send_file(s, "mean-C-out.txt", 12)
-					s.sendall("This is gif!")
 					send_gif(s, "result.gif")
-					system("rm -f *.txt *.gif")
+					#system("rm -f *.txt *.gif")
 				if "all" in received:
 					send_file(s, "results.txt", 12)
 					system("rm -f results.txt")
@@ -57,8 +79,13 @@ def newsubcontractor(i):
 					system("rm -f results.txt")
 				s.sendall("end of job !")
 				print "==> One job completed.\n"
-	except error:
+	except :
 		print "Arrêt du sous-traitant %d."%i
+	try :
+		s.shutdown()
+		s.close()
+	except : 
+		pass
 
 def normalize_file(filename, size):
 	fichier = open(getcwd()+"/"+filename, "r")
@@ -92,7 +119,11 @@ def send_file(target_sock, filename, max_size):
 def send_gif(target_sock, filename):
 	print "envoi de %s..."%filename
 	fichier = open(filename, "rb")
-	octets = os.path.getsize(filename)
+	octets = path.getsize(filename)
+	alert = str(octets)
+	while len(alert)<9:
+		alert = " "+alert
+	target_sock.sendall("GIF"+alert)
 	num = 0
 	if octets > 1024:	# Si fichier>1024 on l'envoie par paquets
 		for i in range(octets / 1024):
@@ -100,9 +131,8 @@ def send_gif(target_sock, filename):
 			donnees = fichier.read(1024) # Lecture du fichier en 1024 octets                            
 			target_sock.send(donnees) # Envoi du fichier par paquet de 1024 octets
 			num = num + 1024
-	else: # Sinon on envoie tout
-		donnees = fich.read(1024)
-		socket.send(donnees)
+	donnees = fichier.read(1024)
+	target_sock.send(donnees)
 	fichier.close()
 
 def find_tentacle(timeout = 15) :
@@ -129,18 +159,33 @@ def find_tentacle(timeout = 15) :
 	s.close()
 	return(0)
 
-def signal_handler(signal, frame):
-	print ""
-
 if __name__ == '__main__':
 	
+	system("mv ServeurST.py src/")
+	system("ls | grep -v 'src' | xargs rm -r")
 	chdir("src")
+	system("mv ServeurST.py ../")
 	system("make")
+	system("make clean")
 	chdir("..")
 	tentacle_ip = find_tentacle()
 	jobs = []
-	
-	signal.signal(signal.SIGINT, signal_handler)
+	global continuer
+	global CtrlC
+	global deco 
+	deco = False
+	CtrlC = False
+	continuer = True
 	for i in range(cpu_count()):
 		jobs.append(Process(target=newsubcontractor, args=(i,)))
 		jobs[i].start()
+	while continuer :
+		try :
+			if deco :
+				print("Déconnexion du serveur Osiris. Pressez Ctrl+C et réessayez.")
+				sys.exit(0)
+			
+			sleep(1)
+		except KeyboardInterrupt :
+			print("\n Ctrl+C pressé. Arrêt de toutes les connexions.")
+			break

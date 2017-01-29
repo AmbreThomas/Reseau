@@ -116,6 +116,20 @@ def clean_file(filename, a = 1):
 		fichier.writelines(data[:-1]+['\n'])
 	fichier.close()
 
+def receive_gif(conn, filename):
+	received = conn.recv(12) #GIF + size
+	octets = int(received.split(" ")[-1])
+	print "reception de %s..."%filename
+	fichier = open(filename, "wb")
+	octnum = 0
+	while octnum+1024 < octets:
+		received = conn.recv(1024)
+		fichier.write(received)
+		octnum += 1024
+	fichier.write(conn.recv(1024))
+	fichier.close()
+
+
 def receive_file(newSocket, filename, max_size, a = 1):
 	print "reception de %s..."%filename
 	r = ""
@@ -146,7 +160,7 @@ def add_file(newSocket, max_size, fichier):
 	return r
 
 def clickvalue1(event):
-	listeCombobox = ["[Glucose] extracellulaire", "[Acétate] extracellulaire", "[Ethanol] extracellulaire", "[Glucose] intracellulaire", "[Acétate] intracellulaire", "[Ethanol] intracellulaire", "Cellules vivantes", "Cellules A vs B", "Fitness des cellules"]
+	listeCombobox = ["[Glucose] extracellulaire", "[Acetate] extracellulaire", "[Ethanol] extracellulaire", "[Glucose] intracellulaire", "[Acetate] intracellulaire", "[Ethanol] intracellulaire", "Cellules vivantes", "Cellules A vs B", "Fitness des cellules"]
 	if (valueGif.get() == 0 or selectGif.get() == "Choisissez"):
 		selection = "0"
 	else:
@@ -165,7 +179,7 @@ def afficherBox():
 		global c
 		selectGif = StringVar()
 		selectGif.set("Choisissez")
-		listeCombobox = ("[Glucose] extracellulaire", "[Acétate] extracellulaire", "[Ethanol] extracellulaire", "[Glucose] intracellulaire", "[Acétate] intracellulaire", "[Ethanol] intracellulaire", "Cellules vivantes", "Cellules A vs B", "Fitness des cellules")
+		listeCombobox = ("[Glucose] extracellulaire", "[Acetate] extracellulaire", "[Ethanol] extracellulaire", "[Glucose] intracellulaire", "[Acetate] intracellulaire", "[Ethanol] intracellulaire", "Cellules vivantes", "Cellules A vs B", "Fitness des cellules")
 		c = Combobox(textvariable = selectGif, values = listeCombobox, width = 200)
 		c.pack()
 	elif (valueGif.get() == 0):
@@ -315,6 +329,7 @@ def envoyer(params, fenetre):
 			if received: received = receive_file(s,"mean-A-out.txt", 12, 3)
 			if received: received = receive_file(s,"mean-B-out.txt", 12, 3)
 			if received: received = receive_file(s,"mean-C-out.txt", 12, 3)
+			if received: receive_gif(s, "result.gif")
 			if received:
 				os.system("Rscript Analyse.R")
 				afficher(1, fenetre2)
