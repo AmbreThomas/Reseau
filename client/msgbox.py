@@ -1,4 +1,5 @@
 import Tkinter as tkinter
+import time
 
 class MessageBox(object):
 
@@ -23,11 +24,6 @@ class MessageBox(object):
         # the message
         message = tkinter.Label(frm_1, text=self.msg)
         message.pack(padx=8, pady=8)
-        # if entry=True create and set focus
-        if entry:
-            self.entry = tkinter.Entry(frm_1)
-            self.entry.pack()
-            self.entry.focus_set()
         # button frame
         frm_2 = tkinter.Frame(frm_1)
         frm_2.pack(padx=4, pady=4)
@@ -43,28 +39,13 @@ class MessageBox(object):
         btn_1.bind('<KeyPress-Return>', func=self.b1_action)
         btn_2.bind('<KeyPress-Return>', func=self.b2_action)
         # roughly center the box on screen
-        # for accuracy see: http://stackoverflow.com/a/10018670/1217270
-        root.update_idletasks()
-        xp = (root.winfo_screenwidth() // 2) - (root.winfo_width() // 2)
-        yp = (root.winfo_screenheight() // 2) - (root.winfo_height() // 2)
-        geom = (root.winfo_width(), root.winfo_height(), xp, yp)
-        root.geometry('{0}x{1}+{2}+{3}'.format(*geom))
         # call self.close_mod when the close button is pressed
         root.protocol("WM_DELETE_WINDOW", self.close_mod)
         # a trick to activate the window (on windows 7)
-        root.deiconify()
-        # if t is specified: call time_out after t seconds
-        if t: root.after(int(t*1000), func=self.time_out)
 
     def b1_action(self, event=None):
-        try: x = self.entry.get()
-        except AttributeError:
-            self.returning = self.b1_return
-            self.root.quit()
-        else:
-            if x:
-                self.returning = x
-                self.root.quit()
+        self.returning = self.b1_return
+        self.root.quit()
 
     def b2_action(self, event=None):
         self.returning = self.b2_return
@@ -74,7 +55,8 @@ class MessageBox(object):
     # remove this function and the call to protocol
     # then the close button will act normally
     def close_mod(self):
-        pass
+        root.eval("::ttk::CancelRepeat")
+        root.quit()
 
     def time_out(self):
         try: x = self.entry.get()
@@ -98,10 +80,4 @@ def mbox(msg, b1='OK', b2='Cancel', frame=True, t=False, entry=False):
     """
     msgbox = MessageBox(msg, b1, b2, frame, t, entry)
     msgbox.root.mainloop()
-    # the function pauses here until the mainloop is quit
     msgbox.root.destroy()
-    return msgbox.returning
-
-
-
-
