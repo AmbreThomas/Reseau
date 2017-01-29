@@ -331,7 +331,10 @@ def envoyer(params, fenetre):
 		s.connect((osiris_ip, 6666))
 		s.sendall("ask ")
 		print s.recv(29)
-		mbox('Les calculs sont prêts à être effectués.\nCliquez sur OK pour continuer.')
+		if ("run" in params and valueGif.get() == 1):
+			pass
+		else:
+			mbox('Les calculs sont prêts à être effectués.\nCliquez sur OK pour continuer.')
 		s.sendall(params)
 		s.settimeout(None)
 		if "run" in params:
@@ -354,7 +357,6 @@ def envoyer(params, fenetre):
 				global enregistrer
 				if (valueGif.get() == 1):
 					global enregistrer_gif
-					afficherGifRequete1()
 					if (not enregistrer_gif):
 						os.system("rm Visualisation_simulation.gif")
 					else:
