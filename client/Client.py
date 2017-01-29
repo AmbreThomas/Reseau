@@ -138,13 +138,30 @@ def add_file(newSocket, max_size, fichier):
 	return r
 
 def clickvalue1(event):
-	envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get()+" 0", fenetre2)
+	listeCombobox = ["[Glucose] extracellulaire", "[Acétate] extracellulaire", "[Ethanol] extracellulaire", "[Glucose] intracellulaire", "[Acétate] intracellulaire", "[Ethanol] intracellulaire", "Cellules vivantes", "Cellules A vs B", "Fitness des cellules"]
+	if (valueGif.get() == 0):
+		selection = "0"
+	else:
+		selection = str(listeCombobox.index(selectGif.get())+1)
+	envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get()+" "+selection, fenetre2)
 
 def clickvalue2(event):
 	envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueT.get()+" "+valueA0.get(), fenetre2)
 
 def clickvalue3(event):
 	envoyer("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueT.get()+" "+valueA0.get()+" "+valueNessai.get(), fenetre2)
+
+def afficherBox():
+	if (valueGif.get()):
+		global selectGif
+		global c
+		selectGif = StringVar()
+		selectGif.set("Choisissez")
+		listeCombobox = ("[Glucose] extracellulaire", "[Acétate] extracellulaire", "[Ethanol] extracellulaire", "[Glucose] intracellulaire", "[Acétate] intracellulaire", "[Ethanol] intracellulaire", "Cellules vivantes", "Cellules A vs B", "Fitness des cellules")
+		c = Combobox(textvariable = selectGif, values = listeCombobox, width = 200)
+		c.pack()
+	elif (valueGif.get() == 0):
+		c.destroy()
 
 def ParamRequest(value, fen):
 	fen.destroy()
@@ -189,24 +206,33 @@ def ParamRequest(value, fen):
 	if value == 1:
 			fenetre2.title("Realiser une simulation")
 			Label(frame, text = "Coefficient de diffusion", font="bold").pack()
+			valueD.set(0.1)
 			EntryD = Entry(frame, textvariable=valueD, width=30).pack()
 			Label(frame, text = "Concentration initiale en glucose", font="bold").pack()
+			valueA0.set(20)
 			EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
 			Label(frame, text = "Pas de temps entre les repiquages", font="bold").pack()
+			valueT.set(1000)
 			EntryT = Entry(frame, textvariable=valueT, width=30).pack()
-			Label(frame, text = "Durée de l'expérience", font="bold").pack()
+			Label(frame, text = "Durée de l'expérience", font = "bold").pack()
+			valueiterMax.set(5000)
 			EntryiterMax = Entry(frame, textvariable=valueiterMax, width=30).pack()
+			global valueGif
+			valueGif = IntVar()
+			valueGif.set(0)
+			check = Checkbutton(frame, text="Visualiser ?", variable=valueGif, command=afficherBox).pack()
 			bvalue1 = Button(fenetre2, text="Valider", command=lambda: clickvalue1(1))
-			bvalue1.pack(side = LEFT)
+			bvalue1.pack(side = LEFT, anchor=SW)
 			bvalue1.focus_set()
 			bvalue1.bind('<Return>', clickvalue1)
-			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
+			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT, anchor=SE)
 			L = 300
-			H = 305
+			H = 325
 			fenetre2.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
 	elif value == 2:
 			fenetre2.title("Exploration parametrique (T et A0)")
 			Label(frame, text = "Coefficient de diffusion", font="bold").pack()
+			valueD.set(0.1)
 			EntryD = Entry(frame, textvariable=valueD, width=30).pack()
 			Label(frame, text = "Pas des concentrations en glucose (entre 0 et 50)", font="bold").pack()
 			EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
@@ -263,7 +289,7 @@ def envoyer(params, fenetre):
 		s.connect((tentacle_ip, 6666))
 		s.sendall("ask ")
 		print s.recv(29)
-		popup = showinfo("", "Les calculs sont prêts à être effectués. Cliquez sur OK pour continuer.")
+		popup = showinfo("", "Les calculs sont prêts à être effectués.\nCliquez sur OK pour continuer.", type = OK)
 		s.sendall(params)
 		if "run" in params:
 			received = receive_file(s, "mean-life-A.txt", 12)
@@ -284,6 +310,10 @@ def envoyer(params, fenetre):
 				global enregistrer
 				if (not enregistrer):
 					os.system("rm th.png")
+				else:
+					os.system("cp th.png "+rep+"/th.png")
+					if rep != os.getcwd():
+						os.system("rm -f th.png")
 		if "all" in params:
 			fichier = open("results.txt", "w")
 			received = add_file(s, 12, fichier)
@@ -299,6 +329,10 @@ def envoyer(params, fenetre):
 				os.system("rm *.txt")
 				if (not enregistrer):
 					os.system("rm th2.png")
+				else:
+					os.system("cp th2.png "+rep+"/th2.png")
+					if rep != os.getcwd():
+						os.system("rm -f th2.png")
 		if "explore" in params:
 			compteur = 0;
 			params = params.split(" ")
@@ -332,14 +366,20 @@ def envoyer(params, fenetre):
 				afficher(3, fenetre2)
 				for i in range (0, Nessai):
 					os.system("rm -rf essai"+str(i+1))
+				os.system("rm -f *.png")
 				if (not enregistrer):
 					os.system("rm *.gif")
+				else:
+					os.system("cp phases-3D-logscale.gif "+rep+"/phases-3D-logscale.gif")
+					if rep != os.getcwd():
+						os.system("rm *.gif")
 	except socket.error, e:
 		print "erreur dans l'appel a une methode de la classe socket : %s"%e
 		sys.exit(1)
 	finally:
 		s.shutdown(1)
 		s.close()
+	os.system("rm -f *.pyc")
 	print "fin"
 	return;
 
