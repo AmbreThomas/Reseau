@@ -233,20 +233,23 @@ class Serveur(object) :
 							p_file = open(p_file_addr,'rb')
 							octets = int(final_line.split()[-1])
 							surplus = octets%1024
-							nb_of_blocks = (octets)/1024
+							nb_of_blocks = (octets-surplus)/1024
 							blocks_got = 0
-							p_file.seek(0)
 							while blocks_got<nb_of_blocks :
 								try :
-									cliensock.sendall(p_file.read(1024))
+									print "Block sent to cli :"+str(blocks_got)
+									p = p_file.read(1024)
+									clientsock.sendall(p)
 									blocks_got+=1
 									p_file.seek(blocks_got*1024)
 								except :
 									print('Déconnexion du client N°'+str(ID_CLI))
 									self.poolCLI.makeInactive(clientsock)
+									p_file.close()
 									break
-							clientsock.sendall(p_file.read(surplus))
-							p_file.close()
+							if blocks_got == nb_of_blocks :
+								clientsock.sendall(p_file.read(surplus))
+								p_file.close()
 						parts+=1
 					######### SI NON : TESTER SI CLIENT TOUJOURS LA ####
 					else :
@@ -257,7 +260,8 @@ class Serveur(object) :
 						except :
 							clientsock.settimeout(None)
 							pass
-						else : # recv a retourné -1
+						else :
+							clientsock.settimeout(None)
 							present = False
 							print('Déconnexion du client N°'+str(ID_CLI))
 							self.poolCLI.makeInactive(clientsock)
@@ -291,6 +295,15 @@ class Serveur(object) :
 				subsock.settimeout(None) 
 				try :
 					s = subsock.send(request)
+				except :
+					print("Déconnexion du sous-traitant N "+ID_SUB)
+					with self.Queue_lock :
+						self.Queue = [request] + self.Queue
+					with self.poolSUB_lock :
+						self.poolSUB.makeInactive(subsock)
+					break
+				try: #Attente de l'envoi des fichiers
+					ID_mission = subsock.recv(12)
 				except :
 					print("Déconnexion du sous-traitant N "+ID_SUB)
 					with self.Queue_lock :
@@ -383,9 +396,21 @@ class Serveur(object) :
 								self.poolCLI_lock.release()
 								registered = True
 							else :
-								print("Le client N°"+str(ID_cli)+" est parti sauvagement...")
-								self.poolCLI_lock.release()
-								break
+								clientsock = self.poolCLI.get_sockCLI(ID_cli)
+								if clientsock >=0: #si il existe toujours...
+									self.poolCLI.Parts[clientsock].append(file_addr)
+									print file_addr,"prêt a être envoyé au client N°",str(ID_cli)
+									if GIF_to_get :
+										self.poolCLI.Parts[clientsock].append(file_addr_gif)
+										print file_addr_gif,"prêt a être envoyé au client N°",str(ID_cli)
+									self.poolCLI_lock.release()
+									registered = True
+								else :
+									print("Le client N°"+str(ID_cli)+" est parti sauvagement...")
+									self.poolCLI_lock.release()
+									break
+					else :
+						break
 
 	############# REPONDRE A LA RECHERCHE D'OSIRIS ####################
 	def broadcasting(self,port_b) :
