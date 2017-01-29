@@ -20,10 +20,10 @@ from msgbox import *
 from gif import *
 
 ################################  MUSIQUE  #####################################
-pygame.mixer.init()
-pygame.mixer.music.load("music.mp3")
-pygame.mixer.music.set_volume(1.5)
-pygame.mixer.music.play(-1)
+#pygame.mixer.init()
+#pygame.mixer.music.load("music.mp3")
+#pygame.mixer.music.set_volume(1.5)
+#pygame.mixer.music.play(-1)
 
 #######################  GESTION FERMETURE SYSTEME  ############################
 def intercepte(fenetre):
