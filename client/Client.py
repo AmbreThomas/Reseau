@@ -3,19 +3,11 @@
 from Tkinter import *
 from ttk import *
 from tkMessageBox import *
-import sys
-import tkFont
+import sys, tkFont, socket, os, string, signal, pygame, time, select
 import matplotlib.pyplot as plt
 from numpy import *
-import socket
-import os
-import string
 from tkFileDialog import *
-import signal
 from PIL import Image, ImageTk
-import pygame
-import time
-import select
 from msgbox import *
 from gif import *
 
@@ -363,11 +355,11 @@ def envoyer(params, fenetre):
 				os.system("rm *.txt")
 				global enregistrer
 				if (not enregistrer):
-					os.system("rm th.png")
+					os.system("rm Resultats_simulation.png")
 				else:
-					os.system("cp th.png "+rep+"/th.png")
+					os.system("cp Resultats_simulation.png "+rep+"/Resultats_simulation.png")
 					if rep != os.getcwd():
-						os.system("rm -f th.png")
+						os.system("rm -f Resultats_simulation.png")
 		if "all" in params:
 			fichier = open("results.txt", "w")
 			received = add_file(s, 12, fichier)
@@ -382,11 +374,11 @@ def envoyer(params, fenetre):
 				afficher(2, fenetre2)
 				os.system("rm *.txt")
 				if (not enregistrer):
-					os.system("rm th2.png")
+					os.system("rm Diagramme_de_phase.png")
 				else:
-					os.system("cp th2.png "+rep+"/th2.png")
+					os.system("cp Diagramme_de_phase.png "+rep+"/Diagramme_de_phase.png")
 					if rep != os.getcwd():
-						os.system("rm -f th2.png")
+						os.system("rm -f Diagramme_de_phase.png")
 		if "explore" in params:
 			compteur = 0;
 			params = params.split(" ")
@@ -471,7 +463,7 @@ def afficher(nb, fenetre):
 		L = 480
 		H = 510
 		fenetre.geometry('%dx%d+'%(L, H) + str(w/2-L/2) + '+'+ str(h/2-H/2))
-		monimage = Image.open(path+'/th.png')
+		monimage = Image.open(path+'/Resultats_simulation.png')
 		photo = ImageTk.PhotoImage(monimage)
 		lab = Label(image = photo)
 		lab.image=photo
@@ -480,7 +472,7 @@ def afficher(nb, fenetre):
 		L = 480
 		H = 510
 		fenetre.geometry('%dx%d+'%(L, H) + str(w/2-L/2) + '+' + str(h/2-H/2))
-		monimage = Image.open(path+'/th2.png')
+		monimage = Image.open(path+'/Diagramme_de_phase.png')
 		photo = ImageTk.PhotoImage(monimage)
 		lab = Label(image = photo)
 		lab.image=photo
