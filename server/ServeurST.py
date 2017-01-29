@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from socket import *
 from sys import argv
+import signal
 from multiprocessing import *
 from os import system, chdir, getcwd, getpid, listdir, mkdir
 from time import sleep
 
 def newsubcontractor(i):
+	#~ i = 1
 	nom_machine = str(gethostname())+"-"+str(i+1)
 	try:
 		mkdir(nom_machine)
@@ -19,39 +21,42 @@ def newsubcontractor(i):
 	s.connect( (tentacle_ip, 6666) )
 	s.sendall("work")
 	print s.recv(20)
-	while 1: #tant que le sous-traitant n'est pas coupe avec Ctrl+C
-		received = s.recv(255)
-		if received: #Accepte une demande de tentacle
-			print "==> New job from tentacle server."
-			jobID = " ".join(received.split(" ")[:2])
-			received = " ".join(received.split(" ")[2:])
-			args = received.split(" ")
-			print "recu sur la machine %s: "%nom_machine,received,"(job ID :",jobID,")"
-			system(received)
-			while len(jobID)<12:
-				jobID = jobID+" "
-			s.sendall(jobID)
-			if "run" in received:
-				send_file(s, "mean-life-A.txt", 12)
-				send_file(s, "mean-life-B.txt", 12)
-				send_file(s, "mean-A-in-A.txt", 12)
-				send_file(s, "mean-A-in-B.txt", 12)
-				send_file(s, "mean-B-in-A.txt", 12)
-				send_file(s, "mean-B-in-B.txt", 12)
-				send_file(s, "mean-C-in-A.txt", 12)
-				send_file(s, "mean-C-in-B.txt", 12)
-				send_file(s, "mean-A-out.txt", 12)
-				send_file(s, "mean-B-out.txt", 12)
-				send_file(s, "mean-C-out.txt", 12)
-				system("rm -f *.txt *.gif")
-			if "all" in received:
-				send_file(s, "results.txt", 12)
-				system("rm -f results.txt")
-			if "explore3D" in received:
-				send_file(s, "results.txt", 12)
-				system("rm -f results.txt")
-			s.sendall("end of job !")
-			print "==> One job completed.\n"
+	try:
+		while 1: #tant que le sous-traitant n'est pas coupe avec Ctrl+C
+			received = s.recv(255)
+			if received: #Accepte une demande de tentacle
+				print "==> New job from tentacle server."
+				jobID = " ".join(received.split(" ")[:2])
+				received = " ".join(received.split(" ")[2:])
+				args = received.split(" ")
+				print "recu sur la machine %s"%nom_machine,"(job ID :",jobID,") : ",received.split("  ")[0]
+				system(received)
+				while len(jobID)<12:
+					jobID = jobID+" "
+				s.sendall(jobID)
+				if "run" in received:
+					send_file(s, "mean-life-A.txt", 12)
+					send_file(s, "mean-life-B.txt", 12)
+					send_file(s, "mean-A-in-A.txt", 12)
+					send_file(s, "mean-A-in-B.txt", 12)
+					send_file(s, "mean-B-in-A.txt", 12)
+					send_file(s, "mean-B-in-B.txt", 12)
+					send_file(s, "mean-C-in-A.txt", 12)
+					send_file(s, "mean-C-in-B.txt", 12)
+					send_file(s, "mean-A-out.txt", 12)
+					send_file(s, "mean-B-out.txt", 12)
+					send_file(s, "mean-C-out.txt", 12)
+					system("rm -f *.txt *.gif")
+				if "all" in received:
+					send_file(s, "results.txt", 12)
+					system("rm -f results.txt")
+				if "explore3D" in received:
+					send_file(s, "results.txt", 12)
+					system("rm -f results.txt")
+				s.sendall("end of job !")
+				print "==> One job completed.\n"
+	except error:
+		print "Arrêt du sous-traitant %d."%i
 
 def normalize_file(filename, size):
 	fichier = open(getcwd()+"/"+filename, "r")
@@ -106,18 +111,18 @@ def find_tentacle(timeout = 15) :
 	s.close()
 	return(0)
 
+def signal_handler(signal, frame):
+	print ""
+
 if __name__ == '__main__':
 	
 	chdir("src")
 	system("make")
 	chdir("..")
-	jobs = []
 	tentacle_ip = find_tentacle()
-	if tentacle_ip :
-		for i in range(cpu_count()):
-			p = Process(target=newsubcontractor, args=(i,))
-			jobs.append(p)
-			p.start()
-
-
-
+	jobs = []
+	
+	signal.signal(signal.SIGINT, signal_handler)
+	for i in range(cpu_count()):
+		jobs.append(Process(target=newsubcontractor, args=(i,)))
+		jobs[i].start()
