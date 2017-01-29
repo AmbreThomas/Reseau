@@ -1,4 +1,4 @@
-png("th2.png")
+png("Diagramme_de_phase.png")
 
 Azero = read.table("results.txt")$V1
 T = read.table("results.txt")$V2

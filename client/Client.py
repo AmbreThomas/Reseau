@@ -50,7 +50,7 @@ def find_osiris_ip(timeout = 15) :
 	s.close()
 	return(0)
 
-tentacle_ip = find_osiris_ip()
+osiris_ip = find_osiris_ip()
 
 ########################  TRACER COURBES REQUETE 3  ############################
 def heatphases(D, N, resolT, resolA):
@@ -331,7 +331,7 @@ def envoyer(params, fenetre):
 	try:
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		s.connect((tentacle_ip, 6666))
+		s.connect((osiris_ip, 6666))
 		s.sendall("ask ")
 		print s.recv(29)
 		mbox('Les calculs sont prêts à être effectués.\nCliquez sur OK pour continuer.')
@@ -348,16 +348,27 @@ def envoyer(params, fenetre):
 			if received: received = receive_file(s,"mean-A-out.txt", 12, 3)
 			if received: received = receive_file(s,"mean-B-out.txt", 12, 3)
 			if received: received = receive_file(s,"mean-C-out.txt", 12, 3)
-			if received and int(params.split(" ")[8])>0: receive_gif(s, "result.gif")
+			if received and int(params.split(" ")[8])>0: receive_gif(s, "Visualisation_simulation.gif")
 			if received:
 				os.system("Rscript Analyse.R")
 				afficher(1, fenetre2)
 				os.system("rm *.txt")
 				global enregistrer
+				if (valueGif.get() == 1):
+					global enregistrer_gif
+					afficherGifRequete1()
+					if (not enregistrer_gif):
+						os.system("rm Visualisation_simulation.gif")
+					else:
+						nom = "Visualisation_simulation.gif"
+						eviter_double_enregistrement(nom, rep_gif, nom.index('.'))
+						if rep_gif != os.getcwd():
+							os.system("rm -f Visualisation_simulation.gif") 
 				if (not enregistrer):
 					os.system("rm Resultats_simulation.png")
 				else:
-					os.system("cp Resultats_simulation.png "+rep+"/Resultats_simulation.png")
+					nom = "Resultats_simulation.png"
+					eviter_double_enregistrement(nom, rep, nom.index('.'))
 					if rep != os.getcwd():
 						os.system("rm -f Resultats_simulation.png")
 		if "all" in params:
@@ -376,8 +387,9 @@ def envoyer(params, fenetre):
 				if (not enregistrer):
 					os.system("rm Diagramme_de_phase.png")
 				else:
-					os.system("cp Diagramme_de_phase.png "+rep+"/Diagramme_de_phase.png")
-					if rep != os.getcwd():
+					nom = "Diagramme_de_phase.png"
+					eviter_double_enregistrement(nom, rep, nom.index('.'))
+					if (rep != os.getcwd()):
 						os.system("rm -f Diagramme_de_phase.png")
 		if "explore" in params:
 			compteur = 0;
@@ -416,7 +428,8 @@ def envoyer(params, fenetre):
 				if (not enregistrer):
 					os.system("rm *.gif")
 				else:
-					os.system("cp phases-3D-logscale.gif "+rep+"/phases-3D-logscale.gif")
+					nom = "phases-3D-logscale.gif"
+					eviter_double_enregistrement(nom, rep, nom.index('.'))
 					if rep != os.getcwd():
 						os.system("rm *.gif")
 	except socket.error, e:
@@ -430,6 +443,17 @@ def envoyer(params, fenetre):
 	return;
 
 #########################  GESTION ENREGISTREMENTS  ############################
+def eviter_double_enregistrement(nom, rep, pos):
+	if os.path.isfile(rep+"/"+nom):
+		nom_1 = nom[:pos]+"1"+nom[pos:]
+		if os.path.isfile(rep+"/"+nom[:pos]+"1"+nom[pos:]):
+			nom1 = nom[:pos]+str(int(nom_1[pos])+1)+nom[pos:]
+			os.system("cp "+nom+" "+rep+"/"+nom1)
+		else:
+			os.system("cp "+nom+" "+rep+"/"+nom_1)
+	else:
+		os.system("cp "+nom+" "+rep+"/"+nom)
+
 def enregistrer_gif_req1():
 	global enregistrer_gif
 	enregistrer_gif = 1
@@ -447,6 +471,8 @@ def afficherGifRequete1():
 	fenetrex = Tk()
 	fenetrex.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetrex))
 	fenetrex.resizable(width = False, height = False)
+	w, h = Image.open(os.getcwd()+"/Visualisation_simulation.gif").size
+	App(fenetrex, "Visualisation_simulation.gif", w, h)
 	Button(fenetrex, text="Cliquez ici pour enregistrer l'image", command=enregistrer_gif_req1).pack(side = LEFT, anchor = SW)
 	Button(fenetrex, text="Fermer", command=fenetrex.destroy).pack(side=RIGHT, anchor = SE)
 	fenetrex.mainloop()
@@ -488,7 +514,7 @@ def afficher(nb, fenetre):
 	global enregistrer_gif
 	enregistrer_gif = 0
 	Button(fenetre, text="Cliquez ici pour enregistrer l'image", command=enregistrer_image).pack(side = LEFT, anchor = SW)
-	if (nb == 1):
+	if (nb == 1 and valueGif.get() == 1):
 		Button(fenetre, text="Voir Gif", command=afficherGifRequete1).pack(side=LEFT, anchor = S)
 	if (nb == 3):
 		fenetre.protocol("WM_DELETE_WINDOW", lambda: intercepte2(fenetre))

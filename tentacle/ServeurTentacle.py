@@ -9,7 +9,7 @@ import sys
 import time
 from os import system
 
-#traiter l'arrêt
+################### TRAITER L'ARRET PAR CTRL+C #########################
 def signal_handler_stop(signal, frame):
 	global WorkingServ
 	global WorkingComp
@@ -20,6 +20,7 @@ def signal_handler_stop(signal, frame):
 		print("\nNous n'acceptons plus de nouveaux clients (Ctrl+C pressé une fois)")
 		WorkingServ = False #pour arrêt de l'écoute
 
+################### DEFINITION DES CLASSES #############################
 #sauvegarde de socket et suivi de leur activité.
 #name désigne la socket
 class ActivePool(object):
@@ -67,6 +68,7 @@ class ActivePool(object):
 			so.close()
 
 class Serveur(object) :
+	################### CREATION DU SERVEUR ############################
 	def __init__(self):
 		print("Bienvenue dans le serveur de calcul distribué Osiris.")
 		try :
@@ -134,8 +136,9 @@ class Serveur(object) :
 			t.join()
 		print('Fin des opérations. Extinction des feux. ')
 
+	################### FRACTIONNEMENT D'UN JOB ########################
 	def fractionne(self, demande_cli, id_client) :
-		#transformer le string en n string dans une liste de taille n
+		#transformer le string en n strings dans une liste
 		#chaque part est précédée de l'id_cli et d'un numéro de part.
 		#["id_cli id_part demande",...]
 		if "run" in demande_cli:
@@ -169,15 +172,16 @@ class Serveur(object) :
 					
 		return(frac_demande, len(frac_demande))
 
-	#gérer la relation client
+	################### RELATION AU CLIENT #############################
 	def handlerCLI(self,clientsock):
-		## Lien et réception de la reuqête.
+		########### ACCEPTER LA CONNEXION ##############################
 		with self.poolSUB_lock :
 			nb_sub_dispo = self.poolSUB.get_size()
 		clientsock.sendall("Requête acceptée ("+ str(nb_sub_dispo)+"ST)")     
 		with self.poolCLI_lock :    
 			self.poolCLI.makeActive(clientsock) 
 			ID_CLI = self.poolCLI.ID[clientsock]
+		########### ATTENDRE UN JOB ####################################
 		try :
 			demande = clientsock.recv(255)
 		except :
@@ -185,6 +189,7 @@ class Serveur(object) :
 			self.poolCLI.makeInactive(clientsock)
 		else :
 			if len(demande) :
+				############### METTRE LE JOB EN ATTENTE ###############
 				print("Client N°"+str(ID_CLI)+" demande : %s"%(demande))
 				with self.poolCLI_lock :
 					frac_demande, nb_of_parts = self.fractionne(demande,self.poolCLI.ID[clientsock])
@@ -194,15 +199,18 @@ class Serveur(object) :
 					GIF_to_send = True
 				with self.Queue_lock :
 					self.Queue.extend(frac_demande)
-				#réception des résultats
+				############### RENVOYER LES RESULTATS #################
 				parts = 0
 				present = True
-				while WorkingComp and parts < nb_of_parts and present :
+				while WorkingComp and parts < nb_of_parts and present:
+					########### TESTER SI FICHIER DISPONIBLE ###########
 					with self.poolCLI_lock :
 						parts_waiting = self.poolCLI.get_nb_of_disponible_parts(clientsock)
 						if  parts_waiting != 0 :
 							p_file_addr = self.poolCLI.Parts[clientsock].pop(0)
-					if parts_waiting != 0 :
+					########### SI OUI : ENVOYER FICHIER ###############
+					if parts_waiting != 0:
+						########### ENVOYER FICHIER TEXTE ##############
 						if not (parts ==1 and GIF_to_send) :
 							print "On envoie le fichier : ",p_file_addr, " au client N°", str(ID_CLI)
 							p_file = open(p_file_addr,'r')
@@ -219,12 +227,11 @@ class Serveur(object) :
 								print('Déconnexion du client N '+str(ID_CLI))
 								self.poolCLI.makeInactive(clientsock)
 								break
+						########## ENVOYER FICHIER GIF #################
 						else :
 							print "On envoie le fichier : ",p_file_addr, " au client N°", str(ID_CLI)
 							p_file = open(p_file_addr,'rb')
 							octets = int(final_line.split()[-1])
-							print "header \n"
-							print final_line
 							surplus = octets%1024
 							nb_of_blocks = (octets-surplus)/1024
 							blocks_got = 0
@@ -244,11 +251,12 @@ class Serveur(object) :
 								clientsock.sendall(p_file.read(surplus))
 								p_file.close()
 						parts+=1
+					######### SI NON : TESTER SI CLIENT TOUJOURS LA ####
 					else :
 						time.sleep(2)
-						clientsock.settimeout(0)
+						clientsock.settimeout(0)#provoque erreur de recv si client
 						try :
-							test = clientsock.recv(1)
+							test = clientsock.recv(1)#le client n'envoie jamais rien
 						except :
 							clientsock.settimeout(None)
 							pass
@@ -257,42 +265,33 @@ class Serveur(object) :
 							present = False
 							print('Déconnexion du client N°'+str(ID_CLI))
 							self.poolCLI.makeInactive(clientsock)
+				############# QUAND TOUS LES FICHIERS SONT RECUS #######
 				if parts == nb_of_parts :
 					print("Client N°"+str(ID_CLI)+" satisfait avec succès")
-					self.poolCLI.makeInactive(clientsock)					
+					self.poolCLI.makeInactive(clientsock)
+			################### SI PAS DE DEMANDE DU CLIENT ############
 			else :
 				print("Client N°" +str(ID_CLI) +" parti sans demander son reste.")
 				self.poolCLI.makeInactive(clientsock)
 
+	################ RELATION AU SERVEUR SOUS-TRAITANT #################
 	def handlerSUB(self,subsock) :
+		############### ACCEPTER CONNEXION #############################
 		with self.poolSUB_lock :
 			self.poolSUB.makeActive(subsock)
 			ID_SUB = self.poolSUB.ID[subsock]
 			ID_SUB = str(ID_SUB)
 		subsock.sendall("Connexion acceptée.")
 		while WorkingComp :
+			############## ATTENDRE UN JOB #############################
 			request = ""
 			try:
 				with self.Queue_lock :
 					request = self.Queue.pop(0)
 			except IndexError:
-				#~ subsock.settimeout(0)
-				#~ rec = ""
-				#~ try :
-					#~ rec = subsock.recv(0)
-				#~ except :
-					#~ pass
-				#~ else :
-					#~ print("1")
-					#~ print("Déconnexion du sous-traitant N "+ID_SUB)
-					#~ with self.Queue_lock :
-						#~ self.Queue = [request] + self.Queue
-					#~ with self.poolSUB_lock :
-						#~ self.poolSUB.makeInactive(subsock)
-					#~ break
-				###tester présence !
 				time.sleep(1)
 			else :
+				########## ENVOYER LE JOB ##############################
 				subsock.settimeout(None) 
 				try :
 					s = subsock.send(request)
@@ -312,9 +311,11 @@ class Serveur(object) :
 					with self.poolSUB_lock :
 						self.poolSUB.makeInactive(subsock)
 					break
+				########## RECEPTIONNER LES RESULTATS ##################
 				if len(ID_mission) > 2 :
-					ID_cli = int(ID_mission.split(" ")[0])
-					ID_part = int(ID_mission.split(" ")[1])
+					###### PREPARER LES DOSSIERS/FICHIERS PART.TXT #####
+					ID_cli = int(request.split(" ")[0])
+					ID_part = int(request.split(" ")[1])
 					command = "mkdir -p TMP_files/CLI"+str(ID_cli)
 					system(command)
 					rep_addr = "TMP_files/CLI"+str(ID_cli)
@@ -327,30 +328,29 @@ class Serveur(object) :
 					results = "" 
 					GIF_to_get = False
 					while WorkingComp:
+						########### RECEVOIR FICHIERS TEXTE ############
 						try :
 							results = subsock.recv(12)
 						except :
 							print("Déconnexion du sous-traitant N "+ID_SUB)
 							with self.Queue_lock :
 								self.Queue = [request] + self.Queue
-							out_file.close()
 							with self.poolSUB_lock :
 								self.poolSUB.makeInactive(subsock)
 							break
 						if "end of job !" == results:
 							break
+							out_file.write(results+"\n")
 						if results[0:3] == "GIF" :
 							nb_octets = int(results.split()[-1])
 							surplus = nb_octets%1024
 							nb_of_blocs = (nb_octets-surplus)/1024
 							GIF_to_get = True
 							blocks_got = 0
-							out_file.write(results+"\n")
 							break
-						out_file.write(results+'\n')
-					out_file.close()			
+					out_file.close()
 					if GIF_to_get :
-						print GIF_to_get
+						########### RECEVOIR FICHIERS GIF ##############
 						file_addr_gif = "TMP_files/CLI"+str(ID_cli)+"/GIF"+str(ID_part)+".gif"
 						out_file = open(file_addr_gif,'wb')		
 						while WorkingComp and blocks_got<nb_of_blocs :
@@ -366,7 +366,6 @@ class Serveur(object) :
 								break
 							out_file.write(results)
 							blocks_got+=1
-						
 						try :
 							results = subsock.recv(surplus)
 							out_file.write(results)
@@ -374,21 +373,28 @@ class Serveur(object) :
 							print("Déconnexion du sous-traitant N "+ID_SUB)
 							with self.Queue_lock :
 								self.Queue = [request] + self.Queue
-							out_file.close()
 							with self.poolSUB_lock :
 								self.poolSUB.makeInactive(subsock)
 							break	
+						out_file.close()
+					####### DECLARER LES FICHIERS COMME DISPONIBLES ####
+					registered = False
+					while not registered:
+						try :
+							self.poolCLI_lock.acquire(0)
+						except :
+							print('poolCLI_lock indisponible') #espéré inutile. jamais vu
+							time.sleep(1)
 						else :
-							out_file.close()
-									
-					if len(results)>10:
-						registered = False
-						while not registered :
-							try :
-								self.poolCLI_lock.acquire(0)
-							except :
-								print('poolCLI_lock indisponible') #espéré inutile. jamais vu
-								time.sleep(1)
+							clientsock = self.poolCLI.get_sockCLI(ID_cli)
+							if clientsock >=0:
+								self.poolCLI.Parts[clientsock].append(file_addr)
+								print file_addr," prêt a être envoyé au client N°",str(ID_cli)
+								if GIF_to_get :
+									self.poolCLI.Parts[clientsock].append(file_addr_gif)
+									print file_addr_gif," prêt a être envoyé au client N°",str(ID_cli)
+								self.poolCLI_lock.release()
+								registered = True
 							else :
 								clientsock = self.poolCLI.get_sockCLI(ID_cli)
 								if clientsock >=0: #si il existe toujours...
@@ -406,6 +412,7 @@ class Serveur(object) :
 					else :
 						break
 
+	############# REPONDRE A LA RECHERCHE D'OSIRIS ####################
 	def broadcasting(self,port_b) :
 		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -420,9 +427,7 @@ class Serveur(object) :
 				message, address = s.recvfrom(10)
 				s.sendto("Le serveur Tentacule tourne à merveille. Envoyez votre requête.",address)
 			except :
-				pass	
-	
-
+				pass
 
 if __name__=="__main__":
     
