@@ -297,9 +297,10 @@ class Serveur(object) :
 					out_file = open(file_addr,'w')
 					out_file.write(file_name+'\n')
 					results = "" 
+					block_size = 12
 					while WorkingComp:
 						try :
-							results = subsock.recv(12)
+							results = subsock.recv(block_size)
 						except :
 							print("Déconnexion du sous-traitant N "+ID_SUB)
 							with self.Queue_lock :
@@ -311,6 +312,8 @@ class Serveur(object) :
 						else :
 							if results == "end of job !" :
 								break
+							if results == "This is gif!" :
+								block_size = 1024
 							out_file.write(results+'\n')
 					out_file.close()
 					if results == "end of job !" :

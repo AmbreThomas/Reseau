@@ -70,6 +70,8 @@ def newsubcontractor(i):
 					send_file(s, "mean-A-out.txt", 12)
 					send_file(s, "mean-B-out.txt", 12)
 					send_file(s, "mean-C-out.txt", 12)
+					s.sendall("This is gif!")
+					send_gif(s, "result.gif")
 					system("rm -f *.txt *.gif")
 				if "all" in received:
 					send_file(s, "results.txt", 12)
@@ -115,6 +117,22 @@ def send_file(target_sock, filename, max_size):
 	while len(endstring)<max_size:
 		endstring = endstring + "."
 	target_sock.sendall(endstring)
+
+def send_gif(target_sock, filename):
+	print "envoi de %s..."%filename
+	fichier = open(filename, "rb")
+	octets = os.path.getsize(filename)
+	num = 0
+	if octets > 1024:	# Si fichier>1024 on l'envoie par paquets
+		for i in range(octets / 1024):
+			fichier.seek(num, 0) # on se deplace par rapport au numero de caractere (de 1024 a 1024 octets)
+			donnees = fichier.read(1024) # Lecture du fichier en 1024 octets                            
+			target_sock.send(donnees) # Envoi du fichier par paquet de 1024 octets
+			num = num + 1024
+	else: # Sinon on envoie tout
+		donnees = fich.read(1024)
+		socket.send(donnees)
+	fichier.close()
 
 def find_tentacle(timeout = 15) :
 	s = socket(AF_INET, SOCK_DGRAM)
