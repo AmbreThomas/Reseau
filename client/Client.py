@@ -473,8 +473,8 @@ def afficherGifRequete1():
 	fenetrex = Tk()
 	fenetrex.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetrex))
 	fenetrex.resizable(width = False, height = False)
-	w, h = Image.open(os.getcwd()+"/Visualisation_simulation.gif").size
-	App(fenetrex, "Visualisation_simulation.gif", w, h)
+	#w, h = Image.open(os.getcwd()+"/Visualisation_simulation.gif").size
+	App(fenetrex, "Visualisation_simulation.gif", 600, 600)
 	Button(fenetrex, text="Cliquez ici pour enregistrer l'image", command=enregistrer_gif_req1).pack(side = LEFT, anchor = SW)
 	Button(fenetrex, text="Fermer", command=fenetrex.destroy).pack(side=RIGHT, anchor = SE)
 	fenetrex.mainloop()
