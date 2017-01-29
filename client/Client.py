@@ -348,12 +348,22 @@ def envoyer(params, fenetre):
 			if received: received = receive_file(s,"mean-A-out.txt", 12, 3)
 			if received: received = receive_file(s,"mean-B-out.txt", 12, 3)
 			if received: received = receive_file(s,"mean-C-out.txt", 12, 3)
-			if received and int(params.split(" ")[8])>0: receive_gif(s, "result.gif")
+			if received and int(params.split(" ")[8])>0: receive_gif(s, "Visualisation_simulation.gif")
 			if received:
 				os.system("Rscript Analyse.R")
 				afficher(1, fenetre2)
 				os.system("rm *.txt")
 				global enregistrer
+				if (valueGif.get() == 1):
+					global enregistrer_gif
+					afficherGifRequete1()
+					if (not enregistrer_gif):
+						os.system("rm Visualisation_simulation.gif")
+					else:
+						nom = "Visualisation_simulation.gif"
+						eviter_double_enregistrement(nom, rep_gif, nom.index('.'))
+						if rep_gif != os.getcwd():
+							os.system("rm -f Visualisation_simulation.gif") 
 				if (not enregistrer):
 					os.system("rm Resultats_simulation.png")
 				else:
@@ -461,6 +471,8 @@ def afficherGifRequete1():
 	fenetrex = Tk()
 	fenetrex.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetrex))
 	fenetrex.resizable(width = False, height = False)
+	w, h = Image.open(os.getcwd()+"/Visualisation_simulation.gif").size
+	App(fenetrex, "Visualisation_simulation.gif", w, h)
 	Button(fenetrex, text="Cliquez ici pour enregistrer l'image", command=enregistrer_gif_req1).pack(side = LEFT, anchor = SW)
 	Button(fenetrex, text="Fermer", command=fenetrex.destroy).pack(side=RIGHT, anchor = SE)
 	fenetrex.mainloop()
@@ -502,7 +514,7 @@ def afficher(nb, fenetre):
 	global enregistrer_gif
 	enregistrer_gif = 0
 	Button(fenetre, text="Cliquez ici pour enregistrer l'image", command=enregistrer_image).pack(side = LEFT, anchor = SW)
-	if (nb == 1):
+	if (nb == 1 and valueGif.get() == 1):
 		Button(fenetre, text="Voir Gif", command=afficherGifRequete1).pack(side=LEFT, anchor = S)
 	if (nb == 3):
 		fenetre.protocol("WM_DELETE_WINDOW", lambda: intercepte2(fenetre))
