@@ -3,11 +3,10 @@ from socket import *
 from sys import argv
 import signal
 from multiprocessing import *
-from os import system, chdir, getcwd, getpid, listdir, mkdir
+from os import system, chdir, getcwd, mkdir, path
 from time import sleep
 
 def newsubcontractor(i):
-	#~ i = 1
 	nom_machine = str(gethostname())+"-"+str(i+1)
 	try:
 		mkdir(nom_machine)
@@ -46,9 +45,8 @@ def newsubcontractor(i):
 					send_file(s, "mean-A-out.txt", 12)
 					send_file(s, "mean-B-out.txt", 12)
 					send_file(s, "mean-C-out.txt", 12)
-					s.sendall("This is gif!")
 					send_gif(s, "result.gif")
-					system("rm -f *.txt *.gif")
+					#system("rm -f *.txt *.gif")
 				if "all" in received:
 					send_file(s, "results.txt", 12)
 					system("rm -f results.txt")
@@ -92,7 +90,11 @@ def send_file(target_sock, filename, max_size):
 def send_gif(target_sock, filename):
 	print "envoi de %s..."%filename
 	fichier = open(filename, "rb")
-	octets = os.path.getsize(filename)
+	octets = path.getsize(filename)
+	alert = str(octets)
+	while len(alert)<9:
+		alert = " "+alert
+	target_sock.sendall("GIF"+alert)
 	num = 0
 	if octets > 1024:	# Si fichier>1024 on l'envoie par paquets
 		for i in range(octets / 1024):
@@ -100,9 +102,8 @@ def send_gif(target_sock, filename):
 			donnees = fichier.read(1024) # Lecture du fichier en 1024 octets                            
 			target_sock.send(donnees) # Envoi du fichier par paquet de 1024 octets
 			num = num + 1024
-	else: # Sinon on envoie tout
-		donnees = fich.read(1024)
-		socket.send(donnees)
+	donnees = fichier.read(1024)
+	target_sock.send(donnees)
 	fichier.close()
 
 def find_tentacle(timeout = 15) :
@@ -134,8 +135,12 @@ def signal_handler(signal, frame):
 
 if __name__ == '__main__':
 	
+	system("mv ServeurST.py src/")
+	system("ls | grep -v 'src' | xargs rm -r")
 	chdir("src")
+	system("mv ServeurST.py ../")
 	system("make")
+	system("make clean")
 	chdir("..")
 	tentacle_ip = find_tentacle()
 	jobs = []
