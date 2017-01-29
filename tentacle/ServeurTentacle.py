@@ -338,7 +338,6 @@ class Serveur(object) :
 						blocks_got = 0
 						break
 				out_file.close()
-				print "on passe au GIF !"
 				time.sleep(10)
 				if GIF_to_get :
 					########### RECEVOIR FICHIERS GIF ##############
