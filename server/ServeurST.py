@@ -34,20 +34,16 @@ def newsubcontractor(i):
 	try:
 		while continuer : #tant que le sous-traitant n'est pas coupe avec Ctrl+C
 			################### ATTENDRE UN JOB ########################
-			received = ""
+			received = 0
 			try :
 				received = s.recv(255)
+				if not received:
+					print "pas de demande."
+					break
 			except KeyboardInterrupt :
-				CtrlC = True
-				continuer = False
 				break
 			except timeout :
 				pass
-			else :
-				if len(received) <2 :
-					deco = True
-					continuer = False
-					break
 			if received:
 				############### ACCEPTE ET FAIT UN JOB #################
 				print "==> New job from osiris server."
@@ -58,6 +54,7 @@ def newsubcontractor(i):
 				system(received)
 				############### ENVOYER LES RESULTATS ##################
 				if "run" in received:
+					s.settimeout(None)
 					send_file(s, "mean-life-A.txt", 12)
 					send_file(s, "mean-life-B.txt", 12)
 					send_file(s, "mean-A-in-A.txt", 12)
@@ -78,14 +75,19 @@ def newsubcontractor(i):
 				if "explore3D" in received:
 					send_file(s, "results.txt", 12)
 					system("rm -f results.txt")
-				s.sendall("end of job !")
+				try:
+					s.sendall("end of job !")
+				except:
+					print "ça send pas"
 				print "==> One job completed.\n"
-	except :
-		print "Arrêt du sous-traitant %d."%i
-	try :
-		s.shutdown()
+	except error as e:
+		print e
+		pass
+	print "Arrêt du sous-traitant %d."%i
+	try:
+		s.shutdown(0)
 		s.close()
-	except : 
+	except:
 		pass
 
 ################ NORMALISER LES LIGNES DE FICHIER A 12 CHAR. ###########

@@ -333,6 +333,7 @@ def envoyer(params, fenetre):
 		print s.recv(29)
 		mbox('Les calculs sont prêts à être effectués.\nCliquez sur OK pour continuer.')
 		s.sendall(params)
+		s.settimeout(None)
 		if "run" in params:
 			received = receive_file(s, "mean-life-A.txt", 12)
 			if received: received = receive_file(s,"mean-life-B.txt", 12, 3)
@@ -377,7 +378,7 @@ def envoyer(params, fenetre):
 				i += 1
 			fichier.close()
 			clean_file("results.txt")
-			if (received):
+			if (len(received)):
 				os.system("Rscript phases.R")
 				afficher(2, fenetre2)
 				os.system("rm *.txt")
