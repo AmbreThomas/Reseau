@@ -502,7 +502,8 @@ def afficher(nb, fenetre):
 		fenetre.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetre))
 		Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side=RIGHT, anchor = SE)
 	fenetre.mainloop()
-	fenetre.destroy()
+	if nb == 3:
+		fenetre.destroy()
 
 #########################  AFFICHAGE FENETRE ACCUEIL  ##########################
 def main():
