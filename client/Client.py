@@ -50,7 +50,7 @@ def find_osiris_ip(timeout = 15) :
 	s.close()
 	return(0)
 
-tentacle_ip = find_osiris_ip()
+osiris_ip = find_osiris_ip()
 
 ########################  TRACER COURBES REQUETE 3  ############################
 def heatphases(D, N, resolT, resolA):
@@ -331,7 +331,7 @@ def envoyer(params, fenetre):
 	try:
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		s.connect((tentacle_ip, 6666))
+		s.connect((osiris_ip, 6666))
 		s.sendall("ask ")
 		print s.recv(29)
 		mbox('Les calculs sont prêts à être effectués.\nCliquez sur OK pour continuer.')
