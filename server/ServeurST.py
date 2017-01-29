@@ -124,6 +124,7 @@ def send_gif(target_sock, filename):
 	alert = str(octets)
 	while len(alert)<9:
 		alert = " "+alert
+	print(octets)
 	target_sock.sendall("GIF"+alert)
 	num = 0
 	for i in range(octets / 1024):

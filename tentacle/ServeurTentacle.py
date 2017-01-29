@@ -188,8 +188,10 @@ class Serveur(object) :
 				print("Client N°"+str(ID_CLI)+" demande : %s"%(demande))
 				with self.poolCLI_lock :
 					frac_demande, nb_of_parts = self.fractionne(demande,self.poolCLI.ID[clientsock])
+					GIF_to_send = False
 				if int(demande.split()[8])>0 and nb_of_parts == 1:
 					nb_of_parts+=1
+					GIF_to_send = True
 				with self.Queue_lock :
 					self.Queue.extend(frac_demande)
 				#réception des résultats
@@ -201,20 +203,41 @@ class Serveur(object) :
 						if  parts_waiting != 0 :
 							p_file_addr = self.poolCLI.Parts[clientsock].pop(0)
 					if parts_waiting != 0 :
-						print "On envoie le fichier : ",p_file_addr, " au client N°", str(ID_CLI)
-						p_file = open(p_file_addr,'r')
-						part = p_file.readlines()
-						p_file.close()
-						try :
-							for line in part:
-								if len(line)>1:
-									clientsock.sendall(line[:-1])
-								else:
-									clientsock.sendall(line)
-						except :
-							print('Déconnexion du client N '+str(ID_CLI))
-							self.poolCLI.makeInactive(clientsock)
-							break
+						if not (parts ==1 and GIF_to_send) :
+							print "On envoie le fichier : ",p_file_addr, " au client N°", str(ID_CLI)
+							p_file = open(p_file_addr,'r')
+							part = p_file.readlines()
+							final_line = part[-1]
+							p_file.close()
+							try :
+								for line in part:
+									if len(line)>1:
+										clientsock.sendall(line[:-1])
+									else:
+										clientsock.sendall(line)
+							except :
+								print('Déconnexion du client N '+str(ID_CLI))
+								self.poolCLI.makeInactive(clientsock)
+								break
+						else :
+							print "On envoie le fichier : ",p_file_addr, " au client N°", str(ID_CLI)
+							p_file = open(p_file_addr,'rb')
+							octets = int(final_line.split()[-1])
+							surplus = octets%1024
+							nb_of_blocks = (octets)/1024
+							blocks_got = 0
+							p_file.seek(0)
+							while blocks_got<nb_of_blocks :
+								try :
+									cliensock.sendall(p_file.read(1024))
+									blocks_got+=1
+									p_file.seek(blocks_got*1024)
+								except :
+									print('Déconnexion du client N°'+str(ID_CLI))
+									self.poolCLI.makeInactive(clientsock)
+									break
+							clientsock.sendall(p_file.read(surplus))
+							p_file.close()
 						parts+=1
 					else :
 						time.sleep(2)
@@ -230,9 +253,7 @@ class Serveur(object) :
 							self.poolCLI.makeInactive(clientsock)
 				if parts == nb_of_parts :
 					print("Client N°"+str(ID_CLI)+" satisfait avec succès")
-					self.poolCLI.makeInactive(clientsock)
-				elif parts == 1 and nb_of_parts == 2 :
-					pass
+					self.poolCLI.makeInactive(clientsock)					
 			else :
 				print("Client N°" +str(ID_CLI) +" parti sans demander son reste.")
 				self.poolCLI.makeInactive(clientsock)
@@ -264,7 +285,7 @@ class Serveur(object) :
 					break
 				time.sleep(1)
 			else :
-				subsock.settimeout(None)  #comment ne pas bloquer mais sortir si il était déjà parti...?
+				subsock.settimeout(None) 
 				try :
 					s = subsock.send(request)
 				except :
@@ -316,6 +337,7 @@ class Serveur(object) :
 							nb_of_blocs = (nb_octets-surplus)/1024
 							GIF_to_get = True
 							blocks_got = 0
+							out_file.write(results+"\n")
 							break
 						out_file.write(results+'\n')
 					out_file.close()			
@@ -336,6 +358,7 @@ class Serveur(object) :
 								break
 							out_file.write(results)
 							blocks_got+=1
+						
 						try :
 							results = subsock.recv(surplus)
 							out_file.write(results)
@@ -347,7 +370,9 @@ class Serveur(object) :
 							with self.poolSUB_lock :
 								self.poolSUB.makeInactive(subsock)
 							break	
-						out_file.close()			
+						else :
+							out_file.close()
+									
 					if len(results)>10:
 						registered = False
 						while not registered :
@@ -360,11 +385,13 @@ class Serveur(object) :
 								clientsock = self.poolCLI.get_sockCLI(ID_cli)
 								if clientsock >=0:
 									self.poolCLI.Parts[clientsock].append(file_addr)
+									print file_addr," prêt a être envoyé au client N°",str(ID_cli)
 									if GIF_to_get :
 										self.poolCLI.Parts[clientsock].append(file_addr_gif)
+										print file_addr_gif," prêt a être envoyé au client N°",str(ID_cli)
 									self.poolCLI_lock.release()
 									registered = True
-									print file_addr," prêt a être envoyé au client N°",str(ID_cli)
+									
 								else :
 									print("Le client N°"+str(ID_cli)+" est parti sauvagement...")
 									self.poolCLI_lock.release()

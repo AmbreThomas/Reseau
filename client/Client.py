@@ -140,7 +140,10 @@ def receive_gif(conn, filename):
 	for i in range(octets/1024):
 		received = conn.recv(1024)
 		fichier.write(received)
-	fichier.write(conn.recv(octets%1024))
+	print("almost done")
+	r = conn.recv(octets%1024)
+	print "recv"
+	fichier.write(r)	
 	fichier.close()
 
 #######################  RECOIT FICHIERS REQUETES 1/2  #########################
