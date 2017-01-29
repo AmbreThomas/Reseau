@@ -211,7 +211,7 @@ def ParamRequest(value, fen):
 			Label(frame, text = "Concentration initiale en glucose", font="bold").pack()
 			valueA0.set(20)
 			EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
-			Label(frame, text = "Pas de temps entre les repiquages", font="bold").pack()
+			Label(frame, text = "Pas des temps entre les repiquages", font="bold").pack()
 			valueT.set(1000)
 			EntryT = Entry(frame, textvariable=valueT, width=30).pack()
 			Label(frame, text = "Durée de l'expérience", font = "bold").pack()
