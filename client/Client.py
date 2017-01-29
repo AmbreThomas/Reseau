@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+##############################  IMPORTATIONS  ##################################
 from Tkinter import *
 from ttk import *
 from tkMessageBox import *
@@ -18,11 +19,13 @@ import select
 from msgbox import *
 from gif import *
 
+################################  MUSIQUE  #####################################
 pygame.mixer.init()
 pygame.mixer.music.load("music.mp3")
 pygame.mixer.music.set_volume(1.5)
 pygame.mixer.music.play(-1)
 
+#######################  GESTION FERMETURE SYSTEME  ############################
 def intercepte(fenetre):
 	fenetre.destroy()
 
@@ -30,7 +33,8 @@ def intercepte2(fenetre):
 	exit()
 	fenetre.quit()
 
-def find_tentacle(timeout = 15) :
+###########################  TROUVER IP SERVEUR  ###############################
+def find_osiris_ip(timeout = 15) :
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -54,8 +58,9 @@ def find_tentacle(timeout = 15) :
 	s.close()
 	return(0)
 
-tentacle_ip = find_tentacle()
+tentacle_ip = find_osiris_ip()
 
+########################  TRACER COURBES REQUETE 3  ############################
 def heatphases(D, N, resolT, resolA):
 	plt.clf()
 	plt.cla()
@@ -96,10 +101,12 @@ def heatphases(D, N, resolT, resolA):
 	print "saving %d.png..."%D
 	plt.savefig("%d.png"%D)
 
+########################  TROUVE TAILLE FENETRES TK  ###########################
 def geoliste(g):
 	r = [i for i in range (0, len(g)) if not g[i].isdigit()]
 	return [int(g[0:r[0]]), int(g[r[0]+1:r[1]])]
 
+#######################  ASSEMBLE FICHIERS REQUETE 3  ##########################
 def assembler(liste, nom, dossier):
 	fichier = open("essai"+str(dossier)+"/results-D"+str(nom)+".txt", "w")
 	for i in range (liste[0], liste[1] + 1):
@@ -108,6 +115,7 @@ def assembler(liste, nom, dossier):
 		ecrire.close()
 	fichier.close()
 
+####################  DEBARASSE FICHIERS LIGNES INUTILES  ######################
 def clean_file(filename, a = 1):
 	fichier = open(filename, "r")
 	data = fichier.readlines()
@@ -122,6 +130,7 @@ def clean_file(filename, a = 1):
 		fichier.writelines(data[:-1]+['\n'])
 	fichier.close()
 
+########################  RECOIT FICHIERS REQUETE 3  ###########################
 def receive_gif(conn, filename):
 	received = conn.recv(12) #GIF + size
 	octets = int(received.split(" ")[-1])
@@ -133,7 +142,7 @@ def receive_gif(conn, filename):
 	fichier.write(conn.recv(octets%1024))
 	fichier.close()
 
-
+#######################  RECOIT FICHIERS REQUETES 1/2  #########################
 def receive_file(newSocket, filename, max_size, a = 1):
 	print "reception de %s..."%filename
 	r = ""
@@ -150,6 +159,7 @@ def receive_file(newSocket, filename, max_size, a = 1):
 	clean_file(filename, a)
 	return r
 
+#######################  ASSEMBLE FICHIERS REQUETE 2  ##########################
 def add_file(newSocket, max_size, fichier):
 	print "reception de donnees..."
 	r = ""
@@ -163,6 +173,7 @@ def add_file(newSocket, max_size, fichier):
 	fichier.writelines(output[1:-1])
 	return r
 
+##############################  GESTION BOUTONS  ###############################
 def clickvalue1(event):
 	listeCombobox = ["[Glucose] extracellulaire", "[Acetate] extracellulaire", "[Ethanol] extracellulaire", "[Glucose] intracellulaire", "[Acetate] intracellulaire", "[Ethanol] intracellulaire", "Cellules vivantes", "Cellules A vs B", "Fitness des cellules"]
 	if (valueGif.get() == 0 or selectGif.get() == "Choisissez"):
@@ -171,12 +182,17 @@ def clickvalue1(event):
 		selection = str(listeCombobox.index(selectGif.get())+1)
 	envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get()+" "+selection, fenetre2)
 
+def clickbutton1(event):
+	global valueRequest
+	ParamRequest(valueRequest.get(), fenetre)
+
 def clickvalue2(event):
 	envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueT.get()+" "+valueA0.get(), fenetre2)
 
 def clickvalue3(event):
 	envoyer("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueT.get()+" "+valueA0.get()+" "+valueNessai.get(), fenetre2)
 
+##########################  GESTION MENU DEROULANT  ############################
 def afficherBox():
 	if (valueGif.get()):
 		global selectGif
@@ -189,6 +205,7 @@ def afficherBox():
 	elif (valueGif.get() == 0):
 		c.destroy()
 
+##########################  DEMANDE DES PARAMETRES  ############################
 def ParamRequest(value, fen):
 	fen.destroy()
 	global fenetre2
@@ -296,9 +313,11 @@ def ParamRequest(value, fen):
 			fenetre2.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
 	return;
 
+###############################  GESTION CTR+C  ################################
 def signal_handler(signal, frame):
 	print 'You pressed Ctrl+C !'
 
+######################  GESTION ENVOI/RECEPTION REQUETES  ######################
 def envoyer(params, fenetre):
 	fenetre.destroy()
 	fenetre2=Tk()
@@ -414,12 +433,20 @@ def envoyer(params, fenetre):
 	print "fin"
 	return;
 
+#########################  GESTION ENREGISTREMENTS  ############################
 def enregistrer_gif_req1():
 	global enregistrer_gif
 	enregistrer_gif = 1
 	global rep_gif
 	rep_gif = askdirectory(title="Choisissez un répertoire")
 
+def enregistrer_image():
+	global enregistrer
+	enregistrer = 1
+	global rep
+	rep = askdirectory(title="Choisissez un répertoire")
+
+#########################  AFFICHAGE GIF REQUETE 1  ############################
 def afficherGifRequete1():
 	fenetrex = Tk()
 	fenetrex.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetrex))
@@ -428,6 +455,7 @@ def afficherGifRequete1():
 	Button(fenetrex, text="Fermer", command=fenetrex.destroy).pack(side=RIGHT, anchor = SE)
 	fenetrex.mainloop()
 
+############################  AFFICHAGE RESULTATS  #############################
 def afficher(nb, fenetre):
 	path = os.getcwd()
 	fenetre.iconbitmap("@../icone.xbm")
@@ -476,16 +504,7 @@ def afficher(nb, fenetre):
 	fenetre.mainloop()
 	fenetre.destroy()
 
-def enregistrer_image():
-	global enregistrer
-	enregistrer = 1
-	global rep
-	rep = askdirectory(title="Choisissez un répertoire")
-
-def clickbutton1(event):
-	global valueRequest
-	ParamRequest(valueRequest.get(), fenetre)
-
+#########################  AFFICHAGE FENETRE ACCUEIL  ##########################
 def main():
 	global fenetre
 	fenetre = Tk()
