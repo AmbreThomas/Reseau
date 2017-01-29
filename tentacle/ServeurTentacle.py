@@ -270,25 +270,28 @@ class Serveur(object) :
 				with self.Queue_lock :
 					request = self.Queue.pop(0)
 			except IndexError:
-				subsock.settimeout(0)
-				rec = ""
-				try :
-					rec = subsock.recv(4)
-				except :
-					pass
-				else :
-					print("Déconnexion du sous-traitant N "+ID_SUB)
-					with self.Queue_lock :
-						self.Queue = [request] + self.Queue
-					with self.poolSUB_lock :
-						self.poolSUB.makeInactive(subsock)
-					break
+				#~ subsock.settimeout(0)
+				#~ rec = ""
+				#~ try :
+					#~ rec = subsock.recv(0)
+				#~ except :
+					#~ pass
+				#~ else :
+					#~ print("1")
+					#~ print("Déconnexion du sous-traitant N "+ID_SUB)
+					#~ with self.Queue_lock :
+						#~ self.Queue = [request] + self.Queue
+					#~ with self.poolSUB_lock :
+						#~ self.poolSUB.makeInactive(subsock)
+					#~ break
+				###tester présence !
 				time.sleep(1)
 			else :
 				subsock.settimeout(None) 
 				try :
 					s = subsock.send(request)
 				except :
+					print("2")
 					print("Déconnexion du sous-traitant N "+ID_SUB)
 					with self.Queue_lock :
 						self.Queue = [request] + self.Queue
@@ -298,6 +301,7 @@ class Serveur(object) :
 				try: #Attente de l'envoi des fichiers
 					ID_mission = subsock.recv(12)
 				except :
+					print("3")
 					print("Déconnexion du sous-traitant N "+ID_SUB)
 					with self.Queue_lock :
 						self.Queue = [request] + self.Queue
@@ -322,6 +326,7 @@ class Serveur(object) :
 						try :
 							results = subsock.recv(12)
 						except :
+							print("4")
 							print("Déconnexion du sous-traitant N "+ID_SUB)
 							with self.Queue_lock :
 								self.Queue = [request] + self.Queue
@@ -349,6 +354,7 @@ class Serveur(object) :
 							try :
 								results = subsock.recv(1024)
 							except :
+								print("5")
 								print("Déconnexion du sous-traitant N "+ID_SUB)
 								with self.Queue_lock :
 									self.Queue = [request] + self.Queue
@@ -363,6 +369,7 @@ class Serveur(object) :
 							results = subsock.recv(surplus)
 							out_file.write(results)
 						except :
+							print("6")
 							print("Déconnexion du sous-traitant N "+ID_SUB)
 							with self.Queue_lock :
 								self.Queue = [request] + self.Queue
