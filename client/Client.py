@@ -327,7 +327,7 @@ def envoyer(params, fenetre):
 			if received: received = receive_file(s,"mean-A-out.txt", 12, 3)
 			if received: received = receive_file(s,"mean-B-out.txt", 12, 3)
 			if received: received = receive_file(s,"mean-C-out.txt", 12, 3)
-			if received: receive_gif(s, "result.gif")
+			if received and int(params.split(" ")[8])>0: receive_gif(s, "result.gif")
 			if received:
 				os.system("Rscript Analyse.R")
 				afficher(1, fenetre2)
