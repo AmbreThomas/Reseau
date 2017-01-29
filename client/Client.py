@@ -12,10 +12,16 @@ import string
 from tkFileDialog import *
 import signal
 from PIL import Image, ImageTk
+import pygame
 import time
 import select
 from msgbox import *
 from gif import *
+
+pygame.mixer.init()
+pygame.mixer.music.load("music.mp3")
+pygame.mixer.music.set_volume(1.5)
+pygame.mixer.music.play(-1)
 
 def intercepte(fenetre):
 	fenetre.destroy()
