@@ -189,12 +189,16 @@ def ParamRequest(value, fen):
 	if value == 1:
 			fenetre2.title("Realiser une simulation")
 			Label(frame, text = "Coefficient de diffusion", font="bold").pack()
+			valueD.set(0.1)
 			EntryD = Entry(frame, textvariable=valueD, width=30).pack()
 			Label(frame, text = "Concentration initiale en glucose", font="bold").pack()
+			valueA0.set(20)
 			EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
 			Label(frame, text = "Pas de temps entre les repiquages", font="bold").pack()
+			valueT.set(1000)
 			EntryT = Entry(frame, textvariable=valueT, width=30).pack()
 			Label(frame, text = "Durée de l'expérience", font="bold").pack()
+			valueiterMax.set(5000)
 			EntryiterMax = Entry(frame, textvariable=valueiterMax, width=30).pack()
 			bvalue1 = Button(fenetre2, text="Valider", command=lambda: clickvalue1(1))
 			bvalue1.pack(side = LEFT)
@@ -207,6 +211,7 @@ def ParamRequest(value, fen):
 	elif value == 2:
 			fenetre2.title("Exploration parametrique (T et A0)")
 			Label(frame, text = "Coefficient de diffusion", font="bold").pack()
+			valueD.set(0.1)
 			EntryD = Entry(frame, textvariable=valueD, width=30).pack()
 			Label(frame, text = "Pas des concentrations en glucose (entre 0 et 50)", font="bold").pack()
 			EntryA0 = Entry(frame, textvariable=valueA0, width=30).pack()
@@ -284,6 +289,10 @@ def envoyer(params, fenetre):
 				global enregistrer
 				if (not enregistrer):
 					os.system("rm th.png")
+				else:
+					os.system("cp th.png "+rep+"/th.png")
+					if rep != os.getcwd():
+						os.system("rm -f th.png")
 		if "all" in params:
 			fichier = open("results.txt", "w")
 			received = add_file(s, 12, fichier)
@@ -299,6 +308,10 @@ def envoyer(params, fenetre):
 				os.system("rm *.txt")
 				if (not enregistrer):
 					os.system("rm th2.png")
+				else:
+					os.system("cp th2.png "+rep+"/th2.png")
+					if rep != os.getcwd():
+						os.system("rm -f th2.png")
 		if "explore" in params:
 			compteur = 0;
 			params = params.split(" ")
@@ -332,14 +345,20 @@ def envoyer(params, fenetre):
 				afficher(3, fenetre2)
 				for i in range (0, Nessai):
 					os.system("rm -rf essai"+str(i+1))
+				os.system("rm -f *.png")
 				if (not enregistrer):
 					os.system("rm *.gif")
+				else:
+					os.system("cp phases-3D-logscale.gif "+rep+"/phases-3D-logscale.gif")
+					if rep != os.getcwd():
+						os.system("rm *.gif")
 	except socket.error, e:
 		print "erreur dans l'appel a une methode de la classe socket : %s"%e
 		sys.exit(1)
 	finally:
 		s.shutdown(1)
 		s.close()
+	os.system("rm -f *.pyc")
 	print "fin"
 	return;
 
