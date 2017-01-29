@@ -2,9 +2,9 @@ import Tkinter as tk
 from PIL import Image, ImageTk, ImageSequence
 
 class App:
-	def __init__(self, parent, filename):
+	def __init__(self, parent, filename, w, h):
 		self.parent = parent
-		self.canvas = tk.Canvas(parent, width = 750, height = 600)
+		self.canvas = tk.Canvas(parent, width = w, height = h)
 		self.canvas.pack()
 		self.sequence = [ImageTk.PhotoImage(img) for img in ImageSequence.Iterator(Image.open(filename))]
 		self.image = self.canvas.create_image(0,0, anchor=tk.NW, image = self.sequence[0])
