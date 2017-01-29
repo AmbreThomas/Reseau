@@ -353,7 +353,7 @@ def envoyer(params, fenetre):
 			if received:
 				os.system("Rscript Analyse.R")
 				afficher(1, fenetre2)
-				if valueGif == 1:
+				if valueGif.get() == 1:
 					afficherGifRequete1()
 				os.system("rm *.txt")
 				global enregistrer
