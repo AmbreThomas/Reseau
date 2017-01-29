@@ -357,7 +357,8 @@ def envoyer(params, fenetre):
 				if (not enregistrer):
 					os.system("rm Resultats_simulation.png")
 				else:
-					os.system("cp Resultats_simulation.png "+rep+"/Resultats_simulation.png")
+					nom = "Resultats_simulation.png"
+					eviter_double_enregistrement(nom, rep, nom.index('.'))
 					if rep != os.getcwd():
 						os.system("rm -f Resultats_simulation.png")
 		if "all" in params:
@@ -376,8 +377,9 @@ def envoyer(params, fenetre):
 				if (not enregistrer):
 					os.system("rm Diagramme_de_phase.png")
 				else:
-					os.system("cp Diagramme_de_phase.png "+rep+"/Diagramme_de_phase.png")
-					if rep != os.getcwd():
+					nom = "Diagramme_de_phase.png"
+					eviter_double_enregistrement(nom, rep, nom.index('.'))
+					if (rep != os.getcwd()):
 						os.system("rm -f Diagramme_de_phase.png")
 		if "explore" in params:
 			compteur = 0;
@@ -416,7 +418,8 @@ def envoyer(params, fenetre):
 				if (not enregistrer):
 					os.system("rm *.gif")
 				else:
-					os.system("cp phases-3D-logscale.gif "+rep+"/phases-3D-logscale.gif")
+					nom = "phases-3D-logscale.gif"
+					eviter_double_enregistrement(nom, rep, nom.index('.'))
 					if rep != os.getcwd():
 						os.system("rm *.gif")
 	except socket.error, e:
@@ -430,6 +433,17 @@ def envoyer(params, fenetre):
 	return;
 
 #########################  GESTION ENREGISTREMENTS  ############################
+def eviter_double_enregistrement(nom, rep, pos):
+	if os.path.isfile(rep+"/"+nom):
+		nom_1 = nom[:pos]+"1"+nom[pos:]
+		if os.path.isfile(rep+"/"+nom[:pos]+"1"+nom[pos:]):
+			nom1 = nom[:pos]+str(int(nom_1[pos])+1)+nom[pos:]
+			os.system("cp "+nom+" "+rep+"/"+nom1)
+		else:
+			os.system("cp "+nom+" "+rep+"/"+nom_1)
+	else:
+		os.system("cp "+nom+" "+rep+"/"+nom)
+
 def enregistrer_gif_req1():
 	global enregistrer_gif
 	enregistrer_gif = 1
