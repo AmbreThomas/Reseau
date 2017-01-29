@@ -22,8 +22,8 @@ def newsubcontractor(i):
 	global continuer
 	continuer = True
 	global CtrlC
-	deco = False
 	global deco
+	deco = False
 	
 	try :
 		print s.recv(20)
