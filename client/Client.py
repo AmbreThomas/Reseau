@@ -125,12 +125,12 @@ def clean_file(filename, a = 1):
 ########################  RECOIT FICHIERS REQUETE 3  ###########################
 def receive_gif(conn, filename):
 	received = conn.recv(12) #GIF + size
-	print received
 	octets = int(received.split(" ")[-1])
 	print "reception de %s..."%filename
 	fichier = open(filename, "wb")
 	for i in range(octets/1024):
 		received = conn.recv(1024)
+		print "taille recue : ", len(received)
 		fichier.write(received)
 	print("almost done")
 	r = conn.recv(octets%1024)
