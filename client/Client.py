@@ -16,6 +16,9 @@ import time
 import select
 from gif import *
 
+def intercepte(fenetre):
+	fenetre.destroy()
+
 def find_tentacle(timeout = 15) :
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -167,6 +170,8 @@ def ParamRequest(value, fen):
 	fen.destroy()
 	global fenetre2
 	fenetre2 = Tk()
+	fenetre2.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetre2))
+	fenetre2.resizable(width = False, height = False)
 	fenetre2.iconbitmap("@../icone.xbm")
 	h = fenetre2.winfo_screenheight()
 	w = fenetre2.winfo_screenwidth()
@@ -274,6 +279,8 @@ def signal_handler(signal, frame):
 def envoyer(params, fenetre):
 	fenetre.destroy()
 	fenetre2=Tk()
+	fenetre2.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetre2))
+	fenetre2.resizable(width = False, height = False)
 	fenetre2.iconbitmap("@../icone.xbm")
 	h = fenetre2.winfo_screenheight()
 	w = fenetre2.winfo_screenwidth()
@@ -391,6 +398,8 @@ def enregistrer_gif_req1():
 
 def afficherGifRequete1():
 	fenetrex = Tk()
+	fenetrex.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetrex))
+	fenetrex.resizable(width = False, height = False)
 	Button(fenetrex, text="Cliquez ici pour enregistrer l'image", command=enregistrer_gif_req1).pack(side = LEFT, anchor = SW)
 	Button(fenetrex, text="Fermer", command=fenetrex.destroy).pack(side=RIGHT, anchor = SE)
 	fenetrex.mainloop()
@@ -398,6 +407,8 @@ def afficherGifRequete1():
 def afficher(nb, fenetre):
 	path = os.getcwd()
 	fenetre.iconbitmap("@../icone.xbm")
+	fenetre.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetre))
+	fenetre.resizable(width = False, height = False)
 	h = fenetre.winfo_screenheight()
 	w = fenetre.winfo_screenwidth()
 	fenetre.title('Résultats')
@@ -449,6 +460,7 @@ def main():
 	global fenetre
 	fenetre = Tk()
 	f1 = Frame(fenetre).pack(padx = 1, pady = 1)
+	fenetre.resizable(width = False, height = False)
 	path = os.getcwd()
 	fenetre.iconbitmap("@../icone.xbm")
 	monimage = Image.open(path+"/../logo.png")
@@ -465,8 +477,8 @@ def main():
 	Radiobutton(f1, text="Exploration parametrique (T et A0)", variable=valueRequest, value=2).pack(anchor=W, padx=(27,8))
 	Radiobutton(f1, text="Exploration parametrique (T, A0 et Dmax)", variable=valueRequest, value=3).pack(anchor=W, padx=(27,8))
 	valider = Button(f1, text="Valider", command=lambda: clickbutton1(1))
-	valider.pack(side = LEFT)
-	Button(f1, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
+	valider.pack(side = LEFT, anchor = SW)
+	Button(f1, text="Fermer", command=fenetre.destroy).pack(side = RIGHT, anchor = SE)
 	h = fenetre.winfo_screenheight()
 	w = fenetre.winfo_screenwidth()
 	L = 350
@@ -474,6 +486,7 @@ def main():
 	valider.focus_set()
 	valider.bind('<Return>', clickbutton1)
 	fenetre.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
+	fenetre.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetre))
 	fenetre.mainloop()
 
 main()
