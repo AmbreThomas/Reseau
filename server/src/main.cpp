@@ -96,16 +96,17 @@ void run(int W, int H, double D, double Azero, int T, size_t iterMax, size_t pho
 
   if (photo>0){
 	switch (photo){
-      case (1): success += system("convert -delay 20 -loop 0 Aout-*.ppm Aout.gif"); break;
-      case (2): success += system("convert -delay 20 -loop 0 Bout-*. Bout.gif"); break;
-      case (3): success += system("convert -delay 20 -loop 0 Cout-*.ppm Cout.gif"); break;
-      case (4): success += system("convert -delay 20 -loop 0 Ain-*.ppm Ain.gif"); break;
-      case (5): success += system("convert -delay 20 -loop 0 Bin-*.ppm Bin.gif"); break;
-      case (6): success += system("convert -delay 20 -loop 0 Cin-*.ppm Cin.gif"); break;
-      case (7): success += system("convert -delay 20 -loop 0 life-*.ppm life.gif"); break;
-      case (8): success += system("convert -delay 20 -loop 0 cells-*.ppm cells.gif"); break;
-      case (9): success += system("convert -delay 20 -loop 0 fitness-*.ppm fitness.gif"); break;
+      case (1): success += system("convert -delay 20 -loop 0 Aout-*.ppm result.gif"); break;
+      case (2): success += system("convert -delay 20 -loop 0 Bout-*.ppm result.gif"); break;
+      case (3): success += system("convert -delay 20 -loop 0 Cout-*.ppm result.gif"); break;
+      case (4): success += system("convert -delay 20 -loop 0 Ain-*.ppm result.gif"); break;
+      case (5): success += system("convert -delay 20 -loop 0 Bin-*.ppm result.gif"); break;
+      case (6): success += system("convert -delay 20 -loop 0 Cin-*.ppm result.gif"); break;
+      case (7): success += system("convert -delay 20 -loop 0 life-*.ppm result.gif"); break;
+      case (8): success += system("convert -delay 20 -loop 0 cells-*.ppm result.gif"); break;
+      case (9): success += system("convert -delay 20 -loop 0 fitness-*.ppm result.gif"); break;
     }
+    if (success != EXIT_SUCCESS) exit(success);
     success += system("rm *.ppm");
   }
 
