@@ -138,13 +138,30 @@ def add_file(newSocket, max_size, fichier):
 	return r
 
 def clickvalue1(event):
-	envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get()+" 0", fenetre2)
+	listeCombobox = ["[Glucose] extracellulaire", "[Acétate] extracellulaire", "[Ethanol] extracellulaire", "[Glucose] intracellulaire", "[Acétate] intracellulaire", "[Ethanol] intracellulaire", "Cellules vivantes", "Cellules A vs B", "Fitness des cellules"]
+	if (valueGif.get() == 0):
+		selection = "0"
+	else:
+		selection = str(listeCombobox.index(selectGif.get())+1)
+	envoyer("./main run "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueA0.get()+" "+valueT.get()+" "+valueiterMax.get()+" "+selection, fenetre2)
 
 def clickvalue2(event):
 	envoyer("./main all "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueD.get()+" "+valueT.get()+" "+valueA0.get(), fenetre2)
 
 def clickvalue3(event):
 	envoyer("./main explore3D "+valueLargeur.get()+" "+valueHauteur.get()+" "+valueDmax.get()+" "+valueDstep.get()+" "+valueT.get()+" "+valueA0.get()+" "+valueNessai.get(), fenetre2)
+
+def afficherBox():
+	if (valueGif.get()):
+		global selectGif
+		global c
+		selectGif = StringVar()
+		selectGif.set("Choisissez")
+		listeCombobox = ("[Glucose] extracellulaire", "[Acétate] extracellulaire", "[Ethanol] extracellulaire", "[Glucose] intracellulaire", "[Acétate] intracellulaire", "[Ethanol] intracellulaire", "Cellules vivantes", "Cellules A vs B", "Fitness des cellules")
+		c = Combobox(textvariable = selectGif, values = listeCombobox, width = 200)
+		c.pack()
+	elif (valueGif.get() == 0):
+		c.destroy()
 
 def ParamRequest(value, fen):
 	fen.destroy()
@@ -197,16 +214,20 @@ def ParamRequest(value, fen):
 			Label(frame, text = "Pas de temps entre les repiquages", font="bold").pack()
 			valueT.set(1000)
 			EntryT = Entry(frame, textvariable=valueT, width=30).pack()
-			Label(frame, text = "Durée de l'expérience", font="bold").pack()
+			Label(frame, text = "Durée de l'expérience", font = "bold").pack()
 			valueiterMax.set(5000)
 			EntryiterMax = Entry(frame, textvariable=valueiterMax, width=30).pack()
+			global valueGif
+			valueGif = IntVar()
+			valueGif.set(0)
+			check = Checkbutton(frame, text="Visualiser ?", variable=valueGif, command=afficherBox).pack()
 			bvalue1 = Button(fenetre2, text="Valider", command=lambda: clickvalue1(1))
-			bvalue1.pack(side = LEFT)
+			bvalue1.pack(side = LEFT, anchor=SW)
 			bvalue1.focus_set()
 			bvalue1.bind('<Return>', clickvalue1)
-			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
+			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT, anchor=SE)
 			L = 300
-			H = 305
+			H = 325
 			fenetre2.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
 	elif value == 2:
 			fenetre2.title("Exploration parametrique (T et A0)")
@@ -268,7 +289,7 @@ def envoyer(params, fenetre):
 		s.connect((tentacle_ip, 6666))
 		s.sendall("ask ")
 		print s.recv(29)
-		popup = showinfo("", "Les calculs sont prêts à être effectués. Cliquez sur OK pour continuer.")
+		popup = showinfo("", "Les calculs sont prêts à être effectués.\nCliquez sur OK pour continuer.", type = OK)
 		s.sendall(params)
 		if "run" in params:
 			received = receive_file(s, "mean-life-A.txt", 12)
