@@ -69,7 +69,7 @@ def newsubcontractor(i):
 					send_file(s, "mean-A-out.txt", 12)
 					send_file(s, "mean-B-out.txt", 12)
 					send_file(s, "mean-C-out.txt", 12)
-					if int(received.split()[8])>0 :
+					if int(args[8]):
 						send_gif(s, "result.gif")
 					#system("rm -f *.txt *.gif")
 				if "all" in received:

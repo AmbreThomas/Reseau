@@ -20,10 +20,10 @@ from msgbox import *
 from gif import *
 
 ################################  MUSIQUE  #####################################
-pygame.mixer.init()
-pygame.mixer.music.load("music.mp3")
-pygame.mixer.music.set_volume(1.5)
-pygame.mixer.music.play(-1)
+#pygame.mixer.init()
+#pygame.mixer.music.load("music.mp3")
+#pygame.mixer.music.set_volume(1.5)
+#pygame.mixer.music.play(-1)
 
 #######################  GESTION FERMETURE SYSTEME  ############################
 def intercepte(fenetre):
@@ -353,7 +353,7 @@ def envoyer(params, fenetre):
 			if received: received = receive_file(s,"mean-A-out.txt", 12, 3)
 			if received: received = receive_file(s,"mean-B-out.txt", 12, 3)
 			if received: received = receive_file(s,"mean-C-out.txt", 12, 3)
-			if received: receive_gif(s, "result.gif")
+			if received and int(params.split(" ")[8])>0: receive_gif(s, "result.gif")
 			if received:
 				os.system("Rscript Analyse.R")
 				afficher(1, fenetre2)
@@ -503,7 +503,8 @@ def afficher(nb, fenetre):
 		fenetre.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetre))
 		Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side=RIGHT, anchor = SE)
 	fenetre.mainloop()
-	fenetre.destroy()
+	if nb == 3:
+		fenetre.destroy()
 
 #########################  AFFICHAGE FENETRE ACCUEIL  ##########################
 def main():
