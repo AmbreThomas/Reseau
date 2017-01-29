@@ -127,12 +127,10 @@ def receive_gif(conn, filename):
 	octets = int(received.split(" ")[-1])
 	print "reception de %s..."%filename
 	fichier = open(filename, "wb")
-	octnum = 0
-	while octnum+1024 < octets:
+	for i in range(octets/1024):
 		received = conn.recv(1024)
 		fichier.write(received)
-		octnum += 1024
-	fichier.write(conn.recv(1024))
+	fichier.write(conn.recv(octets%1024))
 	fichier.close()
 
 

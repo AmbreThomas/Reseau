@@ -125,13 +125,12 @@ def send_gif(target_sock, filename):
 		alert = " "+alert
 	target_sock.sendall("GIF"+alert)
 	num = 0
-	if octets > 1024:	# Si fichier>1024 on l'envoie par paquets
-		for i in range(octets / 1024):
-			fichier.seek(num, 0) # on se deplace par rapport au numero de caractere (de 1024 a 1024 octets)
-			donnees = fichier.read(1024) # Lecture du fichier en 1024 octets                            
-			target_sock.send(donnees) # Envoi du fichier par paquet de 1024 octets
-			num = num + 1024
-	donnees = fichier.read(1024)
+	for i in range(octets / 1024):
+		fichier.seek(num) # on se deplace par rapport au numero de caractere (de 1024 a 1024 octets)
+		donnees = fichier.read(1024) # Lecture du fichier en 1024 octets                            
+		target_sock.send(donnees) # Envoi du fichier par paquet de 1024 octets
+		num = num + 1024
+	donnees = fichier.read(octets%1024)
 	target_sock.send(donnees)
 	fichier.close()
 
