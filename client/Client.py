@@ -43,7 +43,7 @@ def find_tentacle(timeout = 15) :
 		try :
 			message, addr = s.recvfrom(8149)
 		except :
-			sleep(1)
+			time.sleep(1)
 			t+=1
 		else :
 			print "L'adresse du serveur est : ", addr[0]

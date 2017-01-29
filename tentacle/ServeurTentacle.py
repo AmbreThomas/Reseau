@@ -188,6 +188,8 @@ class Serveur(object) :
 				print("Client N°"+str(ID_CLI)+" demande : %s"%(demande))
 				with self.poolCLI_lock :
 					frac_demande, nb_of_parts = self.fractionne(demande,self.poolCLI.ID[clientsock])
+				if int(demande.split()[8])>0 and nb_of_parts == 1:
+					nb_of_parts+=1
 				with self.Queue_lock :
 					self.Queue.extend(frac_demande)
 				#réception des résultats
@@ -229,6 +231,8 @@ class Serveur(object) :
 				if parts == nb_of_parts :
 					print("Client N°"+str(ID_CLI)+" satisfait avec succès")
 					self.poolCLI.makeInactive(clientsock)
+				elif parts == 1 and nb_of_parts == 2 :
+					pass
 			else :
 				print("Client N°" +str(ID_CLI) +" parti sans demander son reste.")
 				self.poolCLI.makeInactive(clientsock)
@@ -311,13 +315,15 @@ class Serveur(object) :
 							surplus = nb_octets%1024
 							nb_of_blocs = (nb_octets-surplus)/1024
 							GIF_to_get = True
+							blocks_got = 0
 							break
 						out_file.write(results+'\n')
 					out_file.close()			
 					if GIF_to_get :
-						file_addr_gif = "TMP_files/CLI"+str(ID_cli)+"/GIF"+str(ID_part)+".txt"
-						out_file = open(file_addr_gif,'w')		
-						while WorkingComp :
+						print GIF_to_get
+						file_addr_gif = "TMP_files/CLI"+str(ID_cli)+"/GIF"+str(ID_part)+".gif"
+						out_file = open(file_addr_gif,'wb')		
+						while WorkingComp and blocks_got<nb_of_blocs :
 							try :
 								results = subsock.recv(1024)
 							except :
@@ -328,12 +334,21 @@ class Serveur(object) :
 								with self.poolSUB_lock :
 									self.poolSUB.makeInactive(subsock)
 								break
-							if "end of job !" == results:
-								break
 							out_file.write(results)
+							blocks_got+=1
+						try :
+							results = subsock.recv(surplus)
+							out_file.write(results)
+						except :
+							print("Déconnexion du sous-traitant N "+ID_SUB)
+							with self.Queue_lock :
+								self.Queue = [request] + self.Queue
+							out_file.close()
+							with self.poolSUB_lock :
+								self.poolSUB.makeInactive(subsock)
+							break	
 						out_file.close()			
-										
-					if "end of job !" == results:
+					if len(results)>10:
 						registered = False
 						while not registered :
 							try :
