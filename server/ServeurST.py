@@ -20,10 +20,34 @@ def newsubcontractor(i):
 	print "Sous-traitant %s disponible."%nom_machine
 	s.connect( (tentacle_ip, 6666) )
 	s.sendall("work")
-	print s.recv(20)
+	global continuer
+	continuer = True
+	global CtrlC
+	deco = False
+	global deco
+	
+	try :
+		print s.recv(20)
+	except KeyboardInterrupt:
+		CtrlC = True
+		continuer = False
+	s.settimeout(0.5)
 	try:
-		while 1: #tant que le sous-traitant n'est pas coupe avec Ctrl+C
-			received = s.recv(255)
+		while continuer : #tant que le sous-traitant n'est pas coupe avec Ctrl+C
+			received = ""
+			try :
+				received = s.recv(255)
+			except KeyboardInterrupt :
+				CtrlC = True
+				continuer = False
+				break
+			except timeout :
+				pass
+			else :
+				if len(received) <2 :
+					deco = True
+					continuer = False
+					break
 			if received: #Accepte une demande de tentacle
 				print "==> New job from tentacle server."
 				jobID = " ".join(received.split(" ")[:2])
@@ -55,8 +79,13 @@ def newsubcontractor(i):
 					system("rm -f results.txt")
 				s.sendall("end of job !")
 				print "==> One job completed.\n"
-	except error:
+	except :
 		print "Arrêt du sous-traitant %d."%i
+	try :
+		s.shutdown()
+		s.close()
+	except : 
+		pass
 
 def normalize_file(filename, size):
 	fichier = open(getcwd()+"/"+filename, "r")
@@ -111,9 +140,6 @@ def find_tentacle(timeout = 15) :
 	s.close()
 	return(0)
 
-def signal_handler(signal, frame):
-	print ""
-
 if __name__ == '__main__':
 	
 	chdir("src")
@@ -121,8 +147,22 @@ if __name__ == '__main__':
 	chdir("..")
 	tentacle_ip = find_tentacle()
 	jobs = []
-	
-	signal.signal(signal.SIGINT, signal_handler)
+	global continuer
+	global CtrlC
+	global deco 
+	deco = False
+	CtrlC = False
+	continuer = True
 	for i in range(cpu_count()):
 		jobs.append(Process(target=newsubcontractor, args=(i,)))
 		jobs[i].start()
+	while continuer :
+		try :
+			if deco :
+				print("Déconnexion du serveur Osiris. Pressez Ctrl+C et réessayez.")
+				sys.exit(0)
+			
+			sleep(1)
+		except KeyboardInterrupt :
+			print("\n Ctrl+C pressé. Arrêt de toutes les connexions.")
+			break
