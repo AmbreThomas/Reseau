@@ -14,10 +14,15 @@ import signal
 from PIL import Image, ImageTk
 import time
 import select
+from msgbox import *
 from gif import *
 
 def intercepte(fenetre):
 	fenetre.destroy()
+
+def intercepte2(fenetre):
+	exit()
+	fenetre.quit()
 
 def find_tentacle(timeout = 15) :
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -256,10 +261,10 @@ def ParamRequest(value, fen):
 			Label(frame, text = "Pas de temps entre les repiquages (entre 1 et 1500)", font="bold").pack()
 			EntryT = Entry(frame, textvariable=valueT, width=30).pack()
 			bvalue2 = Button(fenetre2, text="Valider", command=lambda: clickvalue2(1))
-			bvalue2.pack(side = LEFT)
+			bvalue2.pack(side = LEFT, anchor=SW)
 			bvalue2.focus_set()
 			bvalue2.bind('<Return>', clickvalue2)
-			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
+			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT, anchor=SE)
 			L = 420
 			H = 265
 			fenetre2.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
@@ -276,10 +281,10 @@ def ParamRequest(value, fen):
 			Label(frame, text = "Nombres d'essais à réaliser", font="bold").pack()
 			EntryNessai = Entry(frame, textvariable=valueNessai, width=30).pack()
 			bvalue3 = Button(fenetre2, text="Valider", command=lambda: clickvalue3(1))
-			bvalue3.pack(side = LEFT)
+			bvalue3.pack(side = LEFT, anchor=SW)
 			bvalue3.focus_set()
 			bvalue3.bind('<Return>', clickvalue3)
-			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT)
+			Button(fenetre2, text="Fermer", command=fenetre2.destroy).pack(side = RIGHT, anchor = SE)
 			L = 380
 			H = 350
 			fenetre2.geometry("%dx%d+"%(L, H) + str(w/2-L/2) + "+"+ str(h/2-H/2))
@@ -308,7 +313,7 @@ def envoyer(params, fenetre):
 		s.connect((tentacle_ip, 6666))
 		s.sendall("ask ")
 		print s.recv(29)
-		popup = showinfo("", "Les calculs sont prêts à être effectués.\nCliquez sur OK pour continuer.", type = OK)
+		mbox('Les calculs sont prêts à être effectués.\nCliquez sur OK pour continuer.')
 		s.sendall(params)
 		if "run" in params:
 			received = receive_file(s, "mean-life-A.txt", 12)
@@ -420,7 +425,6 @@ def afficherGifRequete1():
 def afficher(nb, fenetre):
 	path = os.getcwd()
 	fenetre.iconbitmap("@../icone.xbm")
-	fenetre.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetre))
 	fenetre.resizable(width = False, height = False)
 	h = fenetre.winfo_screenheight()
 	w = fenetre.winfo_screenwidth()
@@ -444,11 +448,11 @@ def afficher(nb, fenetre):
 		lab.image=photo
 		lab.pack()
 	if (nb == 3):
-		L = 850
-		H = 650
+		L = 750
+		H = 630
 		fenetre.geometry("%dx%d+"%(L,H) + str(w/2-L/2) + "+"+str(h/2-H/2))
 		path = os.getcwd()
-		image = App(fenetre, path+"/phases-3D-logscale.gif")
+		image = App(fenetre, path+"/phases-3D-logscale.gif", 750, 600)
 	global enregistrer
 	enregistrer = 0
 	global enregistrer_gif
@@ -456,8 +460,15 @@ def afficher(nb, fenetre):
 	Button(fenetre, text="Cliquez ici pour enregistrer l'image", command=enregistrer_image).pack(side = LEFT, anchor = SW)
 	if (nb == 1):
 		Button(fenetre, text="Voir Gif", command=afficherGifRequete1).pack(side=LEFT, anchor = S)
-	Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side=RIGHT, anchor = SE)
+	if (nb == 3):
+		fenetre.protocol("WM_DELETE_WINDOW", lambda: intercepte2(fenetre))
+		boutonchiant = Button(fenetre, text="Fermer", command=lambda: intercepte2(fenetre))
+		boutonchiant.pack(side=RIGHT, anchor = SE)
+	else:
+		fenetre.protocol("WM_DELETE_WINDOW", lambda: intercepte(fenetre))
+		Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side=RIGHT, anchor = SE)
 	fenetre.mainloop()
+	fenetre.destroy()
 
 def enregistrer_image():
 	global enregistrer

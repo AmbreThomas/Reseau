@@ -22,8 +22,8 @@ def newsubcontractor(i):
 	global continuer
 	continuer = True
 	global CtrlC
-	deco = False
 	global deco
+	deco = False
 	
 	try :
 		print s.recv(20)
@@ -168,6 +168,12 @@ if __name__ == '__main__':
 	system("make clean")
 	chdir("..")
 	tentacle_ip = find_tentacle()
+    
+	if len(argv) == 2 :
+		max_cpu_to_use = int(argv[1])
+	else:
+		max_cpu_to_use = 100
+        
 	jobs = []
 	global continuer
 	global CtrlC
@@ -175,15 +181,16 @@ if __name__ == '__main__':
 	deco = False
 	CtrlC = False
 	continuer = True
-	for i in range(cpu_count()):
+    
+	for i in range(min(cpu_count(),max_cpu_to_use)):
 		jobs.append(Process(target=newsubcontractor, args=(i,)))
 		jobs[i].start()
+		
 	while continuer :
 		try :
 			if deco :
-				print("Déconnexion du serveur Osiris. Pressez Ctrl+C et réessayez.")
+				print("Déconnexion du serveur Osiris. Veuillez réessayer.")
 				sys.exit(0)
-			
 			sleep(1)
 		except KeyboardInterrupt :
 			print("\n Ctrl+C pressé. Arrêt de toutes les connexions.")
