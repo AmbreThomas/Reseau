@@ -65,20 +65,3 @@ abline(v=0)
 legend("bottomleft", legend=c("génome A","génome B","Total"),
        col=c(2,4,1), lty=1)
 abline(h=1024, lty=2)
-
-
-x11()
-par(mfrow=c(1,2))
-plot(x, totalA, type='l', col=2,  ylim=c(0,40), main = "Contrôle de la quantité de matière totale")
-lines(x, totalB, type='l', col=3)
-lines(x, totalC, type='l', col=4)
-lines(x, totalA+totalB+totalC, type='l')
-
-plot(x, inteA, type='l', col=2, ylim=c(0,40))
-lines(x, inteB, type='l', col=3)
-lines(x, exte, type='l', col=6)
-lines(x, totalA+totalB+totalC, type='l')
-  
-abline(h=0)
-abline(v=0)
-

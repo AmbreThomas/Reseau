@@ -94,7 +94,7 @@ def assembler(liste, nom, dossier):
 		ecrire.close()
 	fichier.close()
 
-def clean_file(filename, a):
+def clean_file(filename, a = 1):
 	fichier = open(filename, "r")
 	data = fichier.readlines()
 	fichier.close()
@@ -134,7 +134,7 @@ def add_file(newSocket, max_size, fichier):
 			r = r + newSocket.recv(max_size - len(r))
 		output.append(r+'\n')
 		if not r: break
-	fichier.writelines(output[:-1])
+	fichier.writelines(output[1:-1])
 	return r
 
 def clickvalue1(event):
@@ -267,16 +267,16 @@ def envoyer(params, fenetre):
 		s.sendall(params)
 		if "run" in params:
 			received = receive_file(s, "mean-life-A.txt", 12)
-			if received: received = receive_file(s,"mean-life-B.txt", 12)
-			if received: received = receive_file(s,"mean-A-in-A.txt", 12)
-			if received: received = receive_file(s,"mean-A-in-B.txt", 12)
-			if received: received = receive_file(s,"mean-B-in-A.txt", 12)
-			if received: received = receive_file(s,"mean-B-in-B.txt", 12)
-			if received: received = receive_file(s,"mean-C-in-A.txt", 12)
-			if received: received = receive_file(s,"mean-C-in-B.txt", 12)
-			if received: received = receive_file(s,"mean-A-out.txt", 12)
-			if received: received = receive_file(s,"mean-B-out.txt", 12)
-			if received: received = receive_file(s,"mean-C-out.txt", 12)
+			if received: received = receive_file(s,"mean-life-B.txt", 12, 3)
+			if received: received = receive_file(s,"mean-A-in-A.txt", 12, 3)
+			if received: received = receive_file(s,"mean-A-in-B.txt", 12, 3)
+			if received: received = receive_file(s,"mean-B-in-A.txt", 12, 3)
+			if received: received = receive_file(s,"mean-B-in-B.txt", 12, 3)
+			if received: received = receive_file(s,"mean-C-in-A.txt", 12, 3)
+			if received: received = receive_file(s,"mean-C-in-B.txt", 12, 3)
+			if received: received = receive_file(s,"mean-A-out.txt", 12, 3)
+			if received: received = receive_file(s,"mean-B-out.txt", 12, 3)
+			if received: received = receive_file(s,"mean-C-out.txt", 12, 3)
 			if received:
 				os.system("Rscript Analyse.R")
 				afficher(1, fenetre2)
@@ -376,19 +376,18 @@ def afficher(nb, fenetre):
 	global enregistrer
 	enregistrer = 0
 	Button(fenetre, text="Cliquez ici pour enregistrer l'image", command=enregistrer_image).pack(side = LEFT)
-	Button(fenetre, text="Fermer", command=fenetre.quit).pack(side = RIGHT)
+	Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
 	fenetre.mainloop()
 
 def enregistrer_image():
 	global enregistrer
 	enregistrer = 1
+	global rep
+	rep = askdirectory(title="Choisissez un répertoire")
 
 def clickbutton1(event):
 	global valueRequest
 	ParamRequest(valueRequest.get(), fenetre)
-
-def getdir():
-	rep = askdirectory(title="Choisissez un répertoire")
 
 def main():
 	global fenetre
