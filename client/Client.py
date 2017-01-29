@@ -139,7 +139,7 @@ def add_file(newSocket, max_size, fichier):
 
 def clickvalue1(event):
 	listeCombobox = ["[Glucose] extracellulaire", "[Acétate] extracellulaire", "[Ethanol] extracellulaire", "[Glucose] intracellulaire", "[Acétate] intracellulaire", "[Ethanol] intracellulaire", "Cellules vivantes", "Cellules A vs B", "Fitness des cellules"]
-	if (valueGif.get() == 0):
+	if (valueGif.get() == 0 or selectGif.get() == "Choisissez"):
 		selection = "0"
 	else:
 		selection = str(listeCombobox.index(selectGif.get())+1)
@@ -383,6 +383,18 @@ def envoyer(params, fenetre):
 	print "fin"
 	return;
 
+def enregistrer_gif_req1():
+	global enregistrer_gif
+	enregistrer_gif = 1
+	global rep_gif
+	rep_gif = askdirectory(title="Choisissez un répertoire")
+
+def afficherGifRequete1():
+	fenetrex = Tk()
+	Button(fenetrex, text="Cliquez ici pour enregistrer l'image", command=enregistrer_gif_req1).pack(side = LEFT, anchor = SW)
+	Button(fenetrex, text="Fermer", command=fenetrex.destroy).pack(side=RIGHT, anchor = SE)
+	fenetrex.mainloop()
+
 def afficher(nb, fenetre):
 	path = os.getcwd()
 	fenetre.iconbitmap("@../icone.xbm")
@@ -415,8 +427,12 @@ def afficher(nb, fenetre):
 		image = App(fenetre, path+"/phases-3D-logscale.gif")
 	global enregistrer
 	enregistrer = 0
-	Button(fenetre, text="Cliquez ici pour enregistrer l'image", command=enregistrer_image).pack(side = LEFT)
-	Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side = RIGHT)
+	global enregistrer_gif
+	enregistrer_gif = 0
+	Button(fenetre, text="Cliquez ici pour enregistrer l'image", command=enregistrer_image).pack(side = LEFT, anchor = SW)
+	if (nb == 1):
+		Button(fenetre, text="Voir Gif", command=afficherGifRequete1).pack(side=LEFT, anchor = S)
+	Button(fenetre, text="Fermer", command=fenetre.destroy).pack(side=RIGHT, anchor = SE)
 	fenetre.mainloop()
 
 def enregistrer_image():
