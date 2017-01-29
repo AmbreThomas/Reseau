@@ -94,9 +94,12 @@ void run(int W, int H, double D, double Azero, int T, size_t iterMax, size_t pho
     iter++;
   }
 
-  if (photo>0){
-	switch (photo){
-      case (1): success += system("convert -delay 20 -loop 0 Aout-*.ppm result.gif"); break;
+  if (photo>0){ 
+    float rapport = (float) W / (float) H;
+    newH = to_string(600);
+    newW = to_string(rapport*600.0);
+    switch (photo){
+      case (1): success += system("convert -resize "+newW+"x"+newH+" -delay 20 -loop 0 Aout-*.ppm result.gif"); break;
       case (2): success += system("convert -delay 20 -loop 0 Bout-*.ppm result.gif"); break;
       case (3): success += system("convert -delay 20 -loop 0 Cout-*.ppm result.gif"); break;
       case (4): success += system("convert -delay 20 -loop 0 Ain-*.ppm result.gif"); break;

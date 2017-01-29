@@ -7,6 +7,7 @@ from os import system, chdir, getcwd, mkdir, path
 from time import sleep
 
 def newsubcontractor(i):
+	######### CREATION DU DOSSIER DE SERVEUR ###########################
 	nom_machine = str(gethostname())+"-"+str(i+1)
 	try:
 		mkdir(nom_machine)
@@ -17,14 +18,13 @@ def newsubcontractor(i):
 	s = socket(AF_INET, SOCK_STREAM)
 	s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 	print "Sous-traitant %s disponible."%nom_machine
-	s.connect( (tentacle_ip, 6666) )
+	s.connect( (osiris_ip, 6666) )
 	s.sendall("work")
 	global continuer
 	continuer = True
 	global CtrlC
 	global deco
 	deco = False
-	
 	try :
 		print s.recv(20)
 	except KeyboardInterrupt:
@@ -33,6 +33,7 @@ def newsubcontractor(i):
 	s.settimeout(0.5)
 	try:
 		while continuer : #tant que le sous-traitant n'est pas coupe avec Ctrl+C
+			################### ATTENDRE UN JOB ########################
 			received = ""
 			try :
 				received = s.recv(255)
@@ -47,16 +48,15 @@ def newsubcontractor(i):
 					deco = True
 					continuer = False
 					break
-			if received: #Accepte une demande de tentacle
-				print "==> New job from tentacle server."
+			if received:
+				############### ACCEPTE ET FAIT UN JOB #################
+				print "==> New job from osiris server."
 				jobID = " ".join(received.split(" ")[:2])
 				received = " ".join(received.split(" ")[2:])
 				args = received.split(" ")
 				print "recu sur la machine %s"%nom_machine,"(job ID :",jobID,") : ",received.split("  ")[0]
 				system(received)
-				while len(jobID)<12:
-					jobID = jobID+" "
-				s.sendall(jobID)
+				############### ENVOYER LES RESULTATS ##################
 				if "run" in received:
 					send_file(s, "mean-life-A.txt", 12)
 					send_file(s, "mean-life-B.txt", 12)
@@ -88,6 +88,7 @@ def newsubcontractor(i):
 	except : 
 		pass
 
+################ NORMALISER LES LIGNES DE FICHIER A 12 CHAR. ###########
 def normalize_file(filename, size):
 	fichier = open(getcwd()+"/"+filename, "r")
 	data = fichier.readlines()
@@ -101,6 +102,7 @@ def normalize_file(filename, size):
 	fichier.writelines(data)
 	fichier.close()
 
+################ ENVOYER FICHIER TEXTE  ################################
 def send_file(target_sock, filename, max_size):
 	print "envoi de %s..."%filename
 	normalize_file(filename, max_size)
@@ -117,6 +119,7 @@ def send_file(target_sock, filename, max_size):
 		endstring = endstring + "."
 	target_sock.sendall(endstring)
 
+############### ENVOYER FICHIER GIF ####################################
 def send_gif(target_sock, filename):
 	print "envoi de %s..."%filename
 	fichier = open(filename, "rb")
@@ -136,7 +139,8 @@ def send_gif(target_sock, filename):
 	target_sock.send(donnees)
 	fichier.close()
 
-def find_tentacle(timeout = 15) :
+############### TROUVER OSIRIS SUR LE RESEAU ###########################
+def find_osiris(timeout = 15) :
 	s = socket(AF_INET, SOCK_DGRAM)
 	s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 	s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
@@ -169,7 +173,7 @@ if __name__ == '__main__':
 	system("make")
 	system("make clean")
 	chdir("..")
-	tentacle_ip = find_tentacle()
+	osiris_ip = find_osiris()
     
 	if len(argv) == 2 :
 		max_cpu_to_use = int(argv[1])
