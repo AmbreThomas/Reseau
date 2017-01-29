@@ -55,6 +55,21 @@ def newsubcontractor(i):
 				received = " ".join(received.split(" ")[2:])
 				args = received.split(" ")
 				print "recu sur la machine %s"%nom_machine,"(job ID :",jobID,") : ",received.split("  ")[0]
+				############### SECURITE ###############################
+				securite = True
+				if received[0:6] != "./main" :
+					securite = False
+				else :
+					for caractere_interdit in "& : ; |".split() :
+						if caractere_interdit in received :
+							securite = False
+							break
+				if not securite :
+					print("Sécurité compromise.\n Caractère interdit détecté dans la requête client suivante :\n")
+					print(received)
+					print("Déconnexion.")
+					sys.exit(0)
+				system(received)
 				system(received)
 				############### ENVOYER LES RESULTATS ##################
 				if "run" in received:
