@@ -353,6 +353,8 @@ def envoyer(params, fenetre):
 			if received:
 				os.system("Rscript Analyse.R")
 				afficher(1, fenetre2)
+				if valueGif == 1:
+					afficherGifRequete1()
 				os.system("rm *.txt")
 				global enregistrer
 				if (valueGif.get() == 1):
@@ -514,8 +516,6 @@ def afficher(nb, fenetre):
 	global enregistrer_gif
 	enregistrer_gif = 0
 	Button(fenetre, text="Cliquez ici pour enregistrer l'image", command=enregistrer_image).pack(side = LEFT, anchor = SW)
-	if (nb == 1 and valueGif.get() == 1):
-		Button(fenetre, text="Voir Gif", command=afficherGifRequete1).pack(side=LEFT, anchor = S)
 	if (nb == 3):
 		fenetre.protocol("WM_DELETE_WINDOW", lambda: intercepte2(fenetre))
 		boutonchiant = Button(fenetre, text="Fermer", command=lambda: intercepte2(fenetre))
