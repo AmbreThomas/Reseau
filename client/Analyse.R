@@ -1,4 +1,4 @@
-png("th.png")
+png("Resultats_simulation.png")
 
 meanAinA = read.table("mean-A-in-A.txt")$V1
 meanBinA = read.table("mean-B-in-A.txt")$V1
