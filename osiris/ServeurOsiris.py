@@ -413,7 +413,7 @@ class Serveur(object) :
 		while WorkingServ:
 			try:
 				message, address = s.recvfrom(10)
-				s.sendto("Le serveur Tentacule tourne à merveille. Envoyez votre requête.",address)
+				s.sendto("Le serveur Osiris tourne à merveille. Envoyez votre requête.",address)
 			except :
 				pass
 

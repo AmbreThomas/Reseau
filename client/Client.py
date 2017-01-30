@@ -427,10 +427,10 @@ def envoyer(params, fenetre):
 				for D in range(1, 1+Dmax, Dstep):
 					heatphases(D, Nessai, int(params[6]), int(params[7]))
 				os.system("convert -delay 100 -loop 0 *.png phases-3D-logscale.gif")
-				afficher(3, fenetre2)
 				for i in range (0, Nessai):
 					os.system("rm -rf essai"+str(i+1))
 				os.system("rm -f *.png")
+				afficher(3, fenetre2)
 				if (not enregistrer):
 					os.system("rm *.gif")
 				else:
@@ -442,10 +442,10 @@ def envoyer(params, fenetre):
 		print "erreur dans l'appel a une methode de la classe socket : %s"%e
 		sys.exit(1)
 	finally:
+		os.system("rm -f *.pyc")
 		s.shutdown(1)
 		s.close()
-	os.system("rm -f *.pyc")
-	print "fin"
+	print "terminé."
 	return;
 
 #########################  GESTION ENREGISTREMENTS  ############################
