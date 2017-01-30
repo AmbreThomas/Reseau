@@ -142,10 +142,10 @@ def receive_file(newSocket, filename, max_size, a = 1):
 	output = []
 	while "fin." not in r:
 		r = newSocket.recv(max_size)
+		if not r: break
 		if (len(r) < max_size):
 			r = r + newSocket.recv(max_size - len(r))
 		output.append(r+'\n')
-		if not r: break
 	fichier = open(filename, "w")
 	fichier.writelines(output)
 	fichier.close()
@@ -159,10 +159,10 @@ def add_file(newSocket, max_size, fichier, i):
 	output = []
 	while "fin." not in r:
 		r = newSocket.recv(max_size)
+		if not r: break
 		if (len(r) < max_size):
 			r = r + newSocket.recv(max_size - len(r))
 		output.append(r+'\n')
-		if not r: break
 	fichier.writelines(output[1:-1])
 	print "dernière réception:",r
 	return r
