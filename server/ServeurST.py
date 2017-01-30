@@ -51,8 +51,7 @@ def newsubcontractor(i):
 				received = " ".join(received.split(" ")[2:])
 				args = received.split(" ")
 				print "recu sur la machine %s"%nom_machine,"(job ID :",jobID,") : ",received.split("  ")[0]
-				############### SECURITE ###############################
-				securite = True
+				securite = True #Vérifie que la commande à éxecuter est un job
 				if received[0:6] != "./main" :
 					securite = False
 				else :
@@ -65,7 +64,6 @@ def newsubcontractor(i):
 					print(received)
 					print("Déconnexion.")
 					sys.exit(0)
-				system(received)
 				system(received)
 				############### ENVOYER LES RESULTATS ##################
 				if "run" in received:
