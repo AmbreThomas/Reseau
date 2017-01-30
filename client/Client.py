@@ -153,8 +153,8 @@ def receive_file(newSocket, filename, max_size, a = 1):
 	return r
 
 #######################  ASSEMBLE FICHIERS REQUETE 2  ##########################
-def add_file(newSocket, max_size, fichier):
-	print "reception de donnees..."
+def add_file(newSocket, max_size, fichier, i):
+	print "reception du fichier %d..."%(i+1)
 	r = ""
 	output = []
 	while "fin." not in r:
@@ -164,6 +164,7 @@ def add_file(newSocket, max_size, fichier):
 		output.append(r+'\n')
 		if not r: break
 	fichier.writelines(output[1:-1])
+	print "dernière réception:",r
 	return r
 
 ##############################  GESTION BOUTONS  ###############################
@@ -375,10 +376,10 @@ def envoyer(params, fenetre):
 						os.system("rm -f Resultats_simulation.png")
 		if "all" in params:
 			fichier = open("results.txt", "w")
-			received = add_file(s, 12, fichier)
-			i = 1
+			i = 0
+			received = 1
 			while (received and i < 6):
-				received = add_file(s, 12, fichier)
+				received = add_file(s, 12, fichier, i)
 				i += 1
 			fichier.close()
 			clean_file("results.txt")
@@ -393,6 +394,9 @@ def envoyer(params, fenetre):
 					eviter_double_enregistrement(nom, rep, nom.index('.'))
 					if (rep != os.getcwd()):
 						os.system("rm -f Diagramme_de_phase.png")
+			else:
+				print "Fin de fichier non reçue..."
+				print "dernière réception:", received
 		if "explore" in params:
 			compteur = 1;
 			params = params.split(" ")

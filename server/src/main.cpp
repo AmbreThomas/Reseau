@@ -18,7 +18,6 @@ void explore_params(int W, int H, double& D, int Amin, int Amax, int resolT, int
     case (4): Tmin = 751; Tmax = 1000; break;
     case (5): Tmin = 1001; Tmax = 1250; break;
     case (6): Tmin = 1251; Tmax = 1500; break;
-    case (7): Tmin = 1; Tmax = 1500; break;
   }
 
   for (double Azero=Amin; Azero<Amax+1; Azero+= resolA){
