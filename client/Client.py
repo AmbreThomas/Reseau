@@ -132,7 +132,7 @@ def receive_gif(conn, filename):
 		received = conn.recv(1024)
 		fichier.write(received)
 	r = conn.recv(octets%1024)
-	fichier.write(r)	
+	fichier.write(r)
 	fichier.close()
 
 #######################  RECOIT FICHIERS REQUETES 1/2  #########################
@@ -394,7 +394,7 @@ def envoyer(params, fenetre):
 					if (rep != os.getcwd()):
 						os.system("rm -f Diagramme_de_phase.png")
 		if "explore" in params:
-			compteur = 0;
+			compteur = 1;
 			params = params.split(" ")
 			Dmax = int(params[4])
 			Dstep = int(params[5])
